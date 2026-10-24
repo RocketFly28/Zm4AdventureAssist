@@ -57,6 +57,14 @@ ifeq ($(STATIC),1)
   LDFLAGS += -static -static-libgcc
 endif
 
+ifeq ($(OS),Windows_NT)
+  # Reproducible linking: without this the PE header carries a build timestamp,
+  # so every rebuid produces different bytes. Since bin/adventure.exe is
+  # committed, that would make the tracked binary look modified after any
+  # local "make". Dropping the timestamp keeps rebuilds bit-identical.
+  LDFLAGS += -Wl,--no-insert-timestamp
+endif
+
 # ---------------------------------------------------------------- files
 KERNEL := Adventure.c dpCal.c hash.c
 FRONT  := cli.c main.c
