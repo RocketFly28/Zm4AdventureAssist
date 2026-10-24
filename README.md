@@ -181,7 +181,7 @@ P(局, s) = 对剩余题目取平均 · 每题取 4 个选项里概率最高的�
 
 ## 文件说明
 
-仓库只包含源码，共 12 个文件，平铺在同一目录即可编译（互相只通过头文件依赖）：
+仓库只包含源码，共 12 个源文件加一份 `Makefile`，平铺在同一目录即可编译（互相只通过头文件依赖）：
 
 | 文件 | 职责 |
 |---|---|
@@ -192,18 +192,44 @@ P(局, s) = 对剩余题目取平均 · 每题取 4 个选项里概率最高的�
 | `cli.h` / `cli.c` | 命令行前端：子命令、REPL、输出格式化；只调用公开 API |
 | `main.c` | 进程入口，只把 `argc/argv` 转给 `cli_main` |
 | `wasm_api.h` / `.c` | Emscripten 导出层，与内核解耦；不编 wasm 时可以不参与编译 |
+| `Makefile` | 原生构建脚本（GCC / MinGW），产出 `bin/adventure.exe` |
 
 内核三件套（`Adventure`、`dpCal`、`hash`）**不含任何 `main`，也不碰 stdin/stdout**，
 可以直接当静态库链接进别的宿主；命令行只是它的一个使用者。
 
-仓库里**没有**工程文件、构建产物、题目数据的 JSON / CSV 副本，也没有打包脚本——
-这些都属于本机环境，换台机器重建即可。
+仓库里**没有**工程文件、题目数据的 JSON / CSV 副本，也没有打包脚本——
+这些都属于本机环境，换台机器重建即可。唯一的构建产物是 `bin/adventure.exe`，
+方便不想装编译器的同学直接双击运行。
 
 ---
 
 ## 编译与运行
 
-### gcc / clang
+### Makefile（推荐，GCC / MinGW）
+
+源码目录里带了一份 `Makefile`，目标文件和产物分别落在 `build/` 与 `bin/`：
+
+```bash
+mingw32-make              # 发布版 -> bin/adventure.exe
+mingw32-make precal       # 打表版 -> bin/adventure_precal.exe（-DPRE_CAL）
+mingw32-make check        # 只做 -fsyntax-only 语法检查，不产出任何文件
+mingw32-make clean        # 删 build/
+mingw32-make distclean    # 连 bin/ 一起删
+```
+
+release 版默认静态链接（`-static -static-libgcc`），拷走 `.exe` 即可直接运行，
+不需要 MinGW 运行时 DLL。可覆盖的变量：
+
+```bash
+mingw32-make OPT=-O3 NATIVE=1     # 加 -march=native，仅本机用
+mingw32-make STATIC=0             # 动态链接，体积更小
+mingw32-make CC=clang             # 换编译器
+```
+
+> `make` 的 recipe 是 POSIX shell 写法，请在 Git Bash / MSYS2 里跑。
+> `check` 只解析语法、不链接也不执行求解器，长时间算表时也可以放心跑。
+
+### gcc / clang（手工一行）
 
 ```bash
 gcc -std=gnu11 -O2 -fopenmp Adventure.c dpCal.c hash.c cli.c main.c -o adventure
@@ -324,6 +350,13 @@ Success P   :   3.121% (estimated from the first step)
 1. 取消注释 `common.h` 里的 `#define PRE_CAL`（或编译加 `-DPRE_CAL`）
 2. 编译，然后运行 `./adventure table --out .`
    （内部依次算 80 分档与 220 分档，并把结果写进 `winRate80.txt` / `winRate220.txt`）
+
+   用 Makefile 的话就是：
+
+   ```bash
+   mingw32-make precal
+   ./bin/adventure_precal.exe table --out .
+   ```
 3. 把两个文本的内容分别粘贴进 `dpCal.c` 的 `#else` 分支
    （`win_rates80` / `win_rates220` 两处静态常量表）
 4. 关掉 `PRE_CAL`，重新编译——之后启动即查表，没有任何 DP 计算
