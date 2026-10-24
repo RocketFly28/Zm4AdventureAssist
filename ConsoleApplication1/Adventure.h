@@ -155,6 +155,10 @@ double game_query_goal_prob(GameContext* ctx, int T);
 /* 角色初始属性 */
 const Attrs* game_role_init_attrs(RoleId role_id);
 
+/* 全部角色的初始属性表（定义在 Adventure.c），按 role_id-1 索引。
+ * dpCal.c 的 PRE_CAL 打表流程需要遍历所有角色，故在此公开。 */
+extern const Attrs *const g_pInitAttrs;
+
 /*============================= 哈希表 ============================== */
 /* MemoHash / HashEntry 的完整定义在 hash.h（避免与 hash.h 的 typedef 冲突）。 */
 typedef struct Question Question;

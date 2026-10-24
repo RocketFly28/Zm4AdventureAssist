@@ -19,17 +19,21 @@
 #endif
 
 
-/* 默认不定义 WASM，需要时编译加 -DWASM 或取消注释 */
-#ifndef WASM
-#define WASM
-#endif
+/* 目标平台：默认编译原生控制台程序；编译 wasm 时显式传入 -DWASM */
 
 /* 预先计算模式 */
 #ifndef PRE_CAL
 // #define PRE_CAL
 #endif
 
+/* ---------------------------------------------------------------------------
+ * 目标平台开关
+ *   默认   ：原生控制台程序，入口在 main.c，交互在 cli.c
+ *   -DWASM ：关闭控制台相关代码，供 Emscripten 构建纯内核
+ * WASM 优先：即使同时定义了 CONSOLE 也会被取消，避免 wasm 里混入 main。
+ * ------------------------------------------------------------------------- */
 #ifdef WASM
+#undef CONSOLE
 #undef DEBUG
 #define CONSOLE_OFF
 #else

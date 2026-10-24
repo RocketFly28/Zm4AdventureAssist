@@ -304,11 +304,11 @@ static void init_win_rate(double *win_rates, int max_lose)
 /* ============================================================
  * 输出表（可选）
  * ============================================================ */
-static void dump_tables(const char *path, const char *var_name,
+static int dump_tables(const char *path, const char *var_name,
                         const double *win_rates, int max_lose)
 {
     FILE *fp = fopen(path, "w");
-    if (!fp) return;
+    if (!fp) return -1;
     int stride = max_lose + 1;
 
     fprintf(fp, "static const double %s[MAX_ROUND][%d+1] = {\n", var_name, max_lose);
@@ -321,24 +321,43 @@ static void dump_tables(const char *path, const char *var_name,
     }
     fprintf(fp, "};");
     fclose(fp);
-}
-#endif
-
-/* ============================================================
- * main(build_table
- * ============================================================ */
-# ifdef CONSOLE
-# ifdef PRE_CAL
-
-int main()
-{
-    /* 二维表传一维指针：取首元素地址，类型才匹配 */
-    init_win_rate(&win_rates80[0][0], MAX_LOSE620);
-    dump_tables("winRate80.txt", "win_rates80", &win_rates80[0][0], MAX_LOSE620);
-
-    init_win_rate(&win_rates220[0][0], MAX_LOSE480);
-    dump_tables("winRate220.txt", "win_rates220", &win_rates220[0][0], MAX_LOSE480);
     return 0;
 }
-#endif
+
+/*
+ * 对外门面：一次性算出两张概率表并落盘。
+ *
+ * 线程数、表维度、文件名、表长这些细节全部留在本文件，调用方只需给出输出目录。
+ * 参数：out_dir - 输出目录；传 NULL 或空串表示当前目录
+ * 返回：0 成功，-1 失败（目录不可写或路径过长）
+ */
+int dp_build_win_rate_tables(const char *out_dir)
+{
+    char path80[512];
+    char path220[512];
+    const char *dir = (out_dir != NULL && out_dir[0] != '\0') ? out_dir : ".";
+    size_t n = strlen(dir);
+    const char *sep = "";
+
+    /* 目录已自带分隔符时不再重复添加 */
+    if (n > 0 && dir[n - 1] != '/' && dir[n - 1] != '\\')
+        sep = "/";
+
+    if (snprintf(path80, sizeof path80, "%s%s%s", dir, sep, "winRate80.txt")
+            >= (int)sizeof path80)
+        return -1;
+    if (snprintf(path220, sizeof path220, "%s%s%s", dir, sep, "winRate220.txt")
+            >= (int)sizeof path220)
+        return -1;
+
+    init_win_rate(&win_rates80[0][0], MAX_LOSE620);
+    if (dump_tables(path80, "win_rates80", &win_rates80[0][0], MAX_LOSE620) != 0)
+        return -1;
+
+    init_win_rate(&win_rates220[0][0], MAX_LOSE480);
+    if (dump_tables(path220, "win_rates220", &win_rates220[0][0], MAX_LOSE480) != 0)
+        return -1;
+
+    return 0;
+}
 #endif

@@ -61,6 +61,7 @@ DP 只通过指针参数访问缓存表，因此**可重入**，同一进程可�
 - [算法](#算法)
 - [文件说明](#文件说明)
 - [编译与运行](#编译与运行)
+- [命令行用法](#命令行用法)
 - [预计算打表（PRE_CAL）](#预计算打表pre_cal)
 - [C API 速览](#c-api-速览)
 - [WebAssembly 导出接口](#webassembly-导出接口)
@@ -180,15 +181,20 @@ P(局, s) = 对剩余题目取平均 · 每题取 4 个选项里概率最高的�
 
 ## 文件说明
 
-仓库只包含内核源码，共 9 个文件，平铺在同一目录即可编译（互相只通过头文件依赖）：
+仓库只包含源码，共 12 个文件，平铺在同一目录即可编译（互相只通过头文件依赖）：
 
 | 文件 | 职责 |
 |---|---|
-| `common.h` | 编译开关（`PRE_CAL` / `WASM` / `CONSOLE` / `DEBUG`）与游戏版本号 |
-| `Adventure.h` / `.c` | 游戏状态机、题库、规则常量、纯工具函数、工具查询、磁盘缓存 IO |
-| `dpCal.h` / `.c` | DP 本体：期望分、达标概率、多局全局最优、打表（含 `main`） |
+| `common.h` | 编译开关（`WASM` / `PRE_CAL` / `DEBUG`）与游戏版本号 |
+| `Adventure.h` / `.c` | 游戏状态机、题库、规则常量、纯工具函数、查询接口、磁盘缓存 IO |
+| `dpCal.h` / `.c` | DP 本体：期望分、达标概率、多局全局最优、打表门面函数 |
 | `hash.h` / `hash.c` | 开放寻址 memo 哈希表 |
+| `cli.h` / `cli.c` | 命令行前端：子命令、REPL、输出格式化；只调用公开 API |
+| `main.c` | 进程入口，只把 `argc/argv` 转给 `cli_main` |
 | `wasm_api.h` / `.c` | Emscripten 导出层，与内核解耦；不编 wasm 时可以不参与编译 |
+
+内核三件套（`Adventure`、`dpCal`、`hash`）**不含任何 `main`，也不碰 stdin/stdout**，
+可以直接当静态库链接进别的宿主；命令行只是它的一个使用者。
 
 仓库里**没有**工程文件、构建产物、题目数据的 JSON / CSV 副本，也没有打包脚本——
 这些都属于本机环境，换台机器重建即可。
@@ -200,14 +206,13 @@ P(局, s) = 对剩余题目取平均 · 每题取 4 个选项里概率最高的�
 ### gcc / clang
 
 ```bash
-gcc -std=gnu11 -O2 -fopenmp Adventure.c dpCal.c hash.c -o adventure
-./adventure
+gcc -std=gnu11 -O2 -fopenmp Adventure.c dpCal.c hash.c cli.c main.c -o adventure
+./adventure solve --role 3 --target 620
 ```
 
-打表（`PRE_CAL`）时才需要 `-fopenmp`，纯查表运行不需要。
+`-fopenmp` 只有打表（`PRE_CAL`）时才真正需要，纯查表运行可以去掉。
 
-只想编成**不含 main 的内核库**：把 `Adventure.c` 顶部的 `#define CONSOLE` 注释掉，
-然后 `gcc -c` 三个文件并用 `ar` 打包：
+只想编成**不含 main 的内核库**：不把 `cli.c` / `main.c` 加进编译即可。
 
 ```bash
 gcc -std=gnu11 -O2 -c Adventure.c dpCal.c hash.c
@@ -216,11 +221,11 @@ ar rcs libadventure.a Adventure.o dpCal.o hash.o
 
 ### Windows / MSVC
 
-新建一个空的控制台项目，把这 9 个文件全部加进去即可（Debug/Release x64 都行）。
-也可以直接用命令行：
+新建一个空的控制台项目，把这 12 个文件全部加进去（Debug/Release x64 都行），
+或者直接用命令行：
 
 ```bat
-cl /O2 /openmp Adventure.c dpCal.c hash.c
+cl /O2 /openmp Adventure.c dpCal.c hash.c cli.c main.c
 ```
 
 > 代码要**同时在 MSVC、gcc、emcc 下编译**。某些 gcc 能接受的写法 VS 会直接报错，
@@ -229,7 +234,7 @@ cl /O2 /openmp Adventure.c dpCal.c hash.c
 ### WebAssembly / Emscripten
 
 ```bash
-emcc Adventure.c dpCal.c hash.c wasm_api.c -O3 --no-entry -fcommon \
+emcc Adventure.c dpCal.c hash.c wasm_api.c -O3 --no-entry -fcommon -DWASM \
   -sMODULARIZE=1 -sEXPORT_NAME=createAdventureModule \
   -sALLOW_MEMORY_GROWTH=1 -sINITIAL_MEMORY=256MB -sMAXIMUM_MEMORY=2GB \
   -sFORCE_FILESYSTEM=1 \
@@ -237,6 +242,9 @@ emcc Adventure.c dpCal.c hash.c wasm_api.c -O3 --no-entry -fcommon \
   -sEXPORTED_RUNTIME_METHODS=ccall,cwrap,getValue,setValue,HEAP8,HEAPU8,HEAPF64,FS \
   -o adventure.js
 ```
+
+`-DWASM` 必须带上：默认是原生控制台构建，加上它才会关掉控制台相关代码、
+不编 `main.c` / `cli.c`。（`--no-entry` 保证不产生入口。）
 
 产出 `adventure.js` + `adventure.wasm`，用 `createAdventureModule()` 加载，
 之后按下面的导出接口调用。
@@ -247,21 +255,78 @@ emcc Adventure.c dpCal.c hash.c wasm_api.c -O3 --no-entry -fcommon \
 
 ---
 
+## 命令行用法
+
+编译出的 `adventure` 有两种模式：**argv 子命令**，以及不带子命令时进入的**交互式 REPL**。
+两种模式都只调用 `Adventure.h` 的公开接口，不碰内核内部字段。
+
+### argv 模式
+
+```bash
+./adventure solve --role 3 --target 620
+```
+
+| 选项 | 含义 | 默认 |
+|---|---|---|
+| `--role N` | 角色编号 1~7 | 3 |
+| `--target T` | 目标总分；`620` / `480` 走多局冲刺模型，其余走单局模型 | 620 |
+| `--round N` | 已完成局数 0~6 | 0 |
+| `--score S` | 之前几局累计得分 | 0 |
+| `--quiet` | 只打印总结 | 关 |
+
+`solve` 会把本局一路打到结束，每一步打印它认为最优的题目与选项，
+以及该步之后的达标概率与剩余期望分：
+
+```
+step  1 | stage 1 | q_idx  0 (qid 101) | opt 2 | P  3.121% | expect    92.44 | total   0
+         -> SUCCESS +6, hp=3 pow=4 wis=5 cha=5 luck=4 agi=3
+...
+Round score : 97
+Total score : 97  (prior 0 + this round 97)
+Progress    : round 1 of 7 finished
+Success P   :   3.121% (estimated from the first step)
+```
+
+其他子命令：
+
+| 命令 | 作用 |
+|---|---|
+| `adventure roles` | 列出 7 个角色及初始属性 |
+| `adventure rules` | 五个阶段的题目数、必选数、成功/失败得分 |
+| `adventure table [--out DIR]` | 打表（仅 `PRE_CAL` 构建可用） |
+| `adventure version` | 版本与构建模式 |
+| `adventure help` | 用法 |
+
+### REPL 模式
+
+直接运行 `./adventure` 进入：
+
+| 命令 | 作用 |
+|---|---|
+| `role N` / `target T` / `round N` / `score S` | 改设置（前三个会重开一局） |
+| `status` | 当前属性、得分，以及此刻的最优选择 |
+| `q` | 列出本阶段还能选的题 |
+| `opt Q` | 列出第 Q 题的四个选项，及各选项的达标概率 |
+| `pick Q O` | 用第 O 个选项回答第 Q 题 |
+| `auto` | 剩下的题全部自动最优推进 |
+| `reset` / `help` / `quit` | 重开 / 帮助 / 退出 |
+
+> 提示语全部是纯 ASCII，避免在非 Windows 终端（UTF-8）上出现乱码。
+
+---
+
 ## 预计算打表（PRE_CAL）
 
-概率表默认是**空表**（`dpCal.c` 的 `#else` 分支），需要先算一遍再固化成常量。
+概率表默认是 `dpCal.c` 的 `#else` 分支里那两张**已算好并固化的常量表**。
+如果要重新生成（例如改了规则），走 `PRE_CAL` 流程。
 打表是**离线一次性的重活**：状态空间大、递归深，8 线程跑完需要耐心。
 
-1. 打开 `common.h` 里的 `#define PRE_CAL`（取消注释）
-2. 确认 `dpCal.c` 末尾 `main` 里的调用指向你要算的那张表：
-   ```c
-   init_win_rate(&win_rates220[0][0], MAX_LOSE480);
-   dump_tables("winRate220.txt", "win_rates220", &win_rates220[0][0], MAX_LOSE480);
-   ```
-   算 80 分档时换成 `win_rates80` / `MAX_LOSE620`
-3. 编译运行，程序会把结果 dump 成文本
-4. 把文本内容粘贴进 `dpCal.c` 的 `#else` 分支（`win_rates80` / `win_rates220` 的静态常量表位置）
-5. 关掉 `PRE_CAL`，重新编译——之后启动即查表，没有任何 DP 计算
+1. 取消注释 `common.h` 里的 `#define PRE_CAL`（或编译加 `-DPRE_CAL`）
+2. 编译，然后运行 `./adventure table --out .`
+   （内部依次算 80 分档与 220 分档，并把结果写进 `winRate80.txt` / `winRate220.txt`）
+3. 把两个文本的内容分别粘贴进 `dpCal.c` 的 `#else` 分支
+   （`win_rates80` / `win_rates220` 两处静态常量表）
+4. 关掉 `PRE_CAL`，重新编译——之后启动即查表，没有任何 DP 计算
 
 ---
 
@@ -329,13 +394,17 @@ JS 侧用 `_malloc` / `_free` 分配 `OptionEval[4]`（64 字节）等结构体�
   循环变量必须在 `for` 外声明，否则 VS 直接报错。
 - **key 的位宽是硬约束**。`able_lost_s` 在 key 里只占 8 bit（最大 255），
   当前的 80 / 220 两档都在范围内；若将来放宽丢分上限，必须同步扩位，否则会 key 撞车。
-- **源码编码为 GBK**（含中文注释）。用 VS 打开，或给 gcc 加
-  `-finput-charset=GBK -fexec-charset=GBK`；编辑器请按 GBK 打开，否则中文注释会乱码。
-  换行风格也不统一（`dpCal.h` 为 LF，`dpCal.c` 为 CRLF），diff 时请留意。
+- **默认是原生控制台构建**。编 WebAssembly 时必须显式加 `-DWASM`，
+  否则会去编 `main.c` / `cli.c`；反过来只想出库文件时，把这两个文件排除即可。
+- **源码编码为 GBK**（含中文注释），换行统一为 CRLF；只有 `cli.c` / `cli.h` / `main.c`
+  是纯 ASCII（注释也是英文），不受代码页影响。
+  用 VS 打开可直接识别；gcc 需要 `-finput-charset=GBK -fexec-charset=GBK`，
+  否则中文注释会乱码（不影响编译结果）。
 - **题库数据内嵌**。改题目要改 `Adventure.c` 里的 `static const` 表，
   规则常量（`totalQs` / `needPick` / `successScore` / `failScore`）在同文件，注意保持一致。
-- **memo 表很吃内存**。预计算时每线程一份 `1 << 26` 槽的表（每槽 16 字节 ≈ 1 GB），
-  8 线程约 8 GB。机器小就调小初始容量，靠 0.7 装载因子自动扩容。
+- **memo 表很吃内存**。打表时每线程一份 `1 << 24` 槽的表（每槽 16 字节 ≈ 256 MB），
+  8 线程约 2 GB；运行期每份 `1 << 20` 槽 ≈ 16 MB。
+  机器小就调小初始容量，靠 0.7 装载因子自动扩容。
 - **DP 是递归实现**，栈深度等于题目数（10），安全。
 
 ---

@@ -57,8 +57,23 @@ double dpGlobalProMax(MemoHash *memo, uint16_t group_mask, const Attrs role_attr
     int done_cnt, int able_lost_s, int game_round,
     const double *win_rates, int stride);
 
-const double *winrate80;
-const double *winrate220;
+/*
+ * 两张概率表的展平首地址，定义在 dpCal.c。
+ * 必须带 extern：这是指针变量而非常量对象，头文件里写成裸定义会让每个
+ * 包含本头文件的翻译单元各生成一份试探性定义，严格编译选项下会重复定义。
+ */
+extern const double *winrate80;
+extern const double *winrate220;
+
+#ifdef PRE_CAL
+/*
+ * 一次性算出两张概率表并落盘（仅 PRE_CAL 构建可用）。
+ * 参数：out_dir - 输出目录；NULL 或空串表示当前目录
+ * 返回：0 成功，-1 失败（目录不可写或路径过长）
+ * 注意：这是重计算，单次可能需要数十分钟，不要放进启动路径。
+ */
+int dp_build_win_rate_tables(const char *out_dir);
+#endif
 
 #ifdef __cplusplus
 }

@@ -12,10 +12,6 @@
 #ifdef DEBUG
 #include <assert.h>
 #endif
-#ifdef CONSOLE
-#include <time.h>     /* 仅控制台自测/计时用 */
-#endif
-#define CONSOLE
 /* ===========================================================================
  * 本文件为"生存大冒险"的纯计算内核。
  *
@@ -23,9 +19,9 @@
  *     管理；DP 函数只通过指针参数访问 memo，不碰任何全局变量，因此可重入、
  *     支持同一进程同时跑多局（后端多会话 / WASM 均可）。
  *   - 题库常量、规则数组为 static const 只读数据，可被多局安全共享，不需要改动。
- *   - 控制台 main 与全部 stdin/stdout 交互均以 #ifdef CONSOLE 包裹：
+ *   - 控制台交互已拆分到 cli.c / cli.h，进程入口在 main.c：
  *       未定义 CONSOLE  → 编译为纯内核库，不包含任何 IO/main；
- *       定义了 CONSOLE  → 额外编译一个交互式 main（也便于本地验证内核）。
+ *       定义了 CONSOLE  → 由 main.c 提供入口，本文件不再包含 main。
  * =========================================================================== */
 
 /* TRUE / FALSE 与内核 bool 类型定义见 Adventure.h（dpCal.c 共用）。 */
@@ -357,7 +353,7 @@ static const Attrs g_initAttrs[7] = {
     {.health = 3, .power = 3, .wisdom = 4, .charm = 5, .luck = 3, .agility = 6},  /* 小玉 */
     {.health = 5, .power = 4, .wisdom = 4, .charm = 4, .luck = 3, .agility = 4}   /* 小吒 */
 };
-extern const Attrs *const g_pInitAttrs = g_initAttrs;
+const Attrs *const g_pInitAttrs = g_initAttrs;
 
 /* ------------------------------ 规则常量（只读） ------------------------------ */
 /* gid 0~4：题型阶段，见 judgeGroup */
@@ -1280,131 +1276,3 @@ int game_ctx_find_qidx_by_id(const GameContext *ctx, int question_id)
     }
     return -1;
 }
-
-/* =====================================================================
- * 控制台交互（可选，仅在 CONSOLE 下编译）
- * 同时修复了原 main 中"打印 +1/+0 分"与实际得分不一致的问题。
- * ===================================================================== */
-#ifdef CONSOLE
-
-/*
- * [CONSOLE] 以可读格式打印六维属性到 stdout。
- */
-static void print_attrs(const Attrs *a)
-{
-    printf("hp=%d, pow=%d, wis=%d, cha=%d, luck=%d, agi=%d\n",
-        a->health, a->power, a->wisdom, a->charm, a->luck, a->agility);
-}
-
-/* 读取一个整数，非数字输入返回 0，并清空输入缓冲避免死循环 */
-static int read_int(int *out)
-{
-    int r = scanf("%d", out);
-    int c;
-    while ((c = getchar()) != '\n' && c != EOF) {}
-    return r;
-}
-
-#ifndef PRE_CAL
-
-/*
- * [CONSOLE] 交互式控制台主入口：选角色→选目标→循环选题/选选项→输出 DP 提示。
- */
-int main(void)
-{
-    printf("==== 冒险游戏 ====\n");
-    printf("请选择角色：\n1:小唐  2:小猴  3:小猪\n4:小沙  5:小白  6:小玉\n");
-    int roleSel;
-    if (read_int(&roleSel) != 1 || roleSel < ROLE_XIAO_TANG || roleSel > ROLE_XIAO_YU) {
-        printf("输入无效，默认选择小猪\n");
-        roleSel = ROLE_XIAO_ZHU;
-    }
-
-    GameContext *ctx = game_ctx_create((RoleId)roleSel);
-    if (!ctx) { printf("创建上下文失败\n"); return 1; }
-
-    int targetT = 0;
-    printf("请输入目标总分 T（0 表示不启用达标概率提示）：");
-    if (read_int(&targetT) != 1 || targetT < 0) targetT = 0;
-
-    while (TRUE) {
-        if (ctx->done_cnt >= 10) {
-            printf("全部10题完成！总得分：%d\n", ctx->total_score);
-            break;
-        }
-        if (ctx->cur_attr.health <= 0) {
-            printf("生命值耗尽，冒险结束！总得分：%d\n", ctx->total_score);
-            break;
-        }
-
-        int type = game_ctx_get_type(ctx);
-        int totalq = game_ctx_type_total(ctx);
-        int need = game_ctx_type_need(ctx);
-
-        printf("\n====================================\n");
-        printf("【当前进度】已完成题目：%d  当前总得分：%d\n", ctx->done_cnt, ctx->total_score);
-        printf("当前属性："); print_attrs(&ctx->cur_attr);
-        printf("本组还需选 %d 题（题型 %d）\n", need, type);
-        printf("【可选择题目】\n");
-        for (int i = 0; i < totalq; i++) {
-            if (game_ctx_type_available(ctx, i))
-                printf("  q_idx:%d  | 题目ID：%d\n", i, game_ctx_type_question_id(ctx, i));
-        }
-
-        int qSel;
-        printf("请输入 q_idx（本组题号）：");
-        if (read_int(&qSel) != 1 || !game_ctx_type_available(ctx, qSel)) {
-            printf("输入无效，重新输入\n");
-            continue;
-        }
-
-        OptionEval evals[4];
-        int has_eval = (game_evaluate_options(ctx, qSel, targetT, evals) == 0);
-
-        // 把门槛和评估结果合并打印
-        for (int opt = 0; opt < 4; opt++) {
-            OptionInfo oi;
-            game_ctx_type_option(ctx, qSel, opt, &oi);
-
-            // 打印基础门槛
-            printf("【选项%d】判定门槛 hp>=%d, pow>=%d, wis>=%d, cha>=%d, luck>=%d, agi>=%d",
-                opt, oi.success_attrs.health, oi.success_attrs.power, oi.success_attrs.wisdom,
-                oi.success_attrs.charm, oi.success_attrs.luck, oi.success_attrs.agility);
-
-            // 立刻紧跟 DP 提示
-            if (has_eval) {
-                printf(" | 期望剩余: %.2f", evals[opt].expect_remain);
-                //if (targetT > 0 && evals[opt].prob_goal >= 0.0) {
-                    printf(" 达标概率: %.3f", evals[opt].prob_goal);
-                //}
-            }
-            printf("\n");
-        }
-
-        int optSel;
-        printf("输入选项 0~3：");
-        if (read_int(&optSel) != 1 || optSel < 0 || optSel > 3) {
-            printf("选项非法\n");
-            continue;
-        }
-
-        StepResult sr;
-        if (game_do_step(ctx, qSel, optSel, &sr) != 0) {
-            printf("执行失败\n");
-            continue;
-        }
-        printf("判定%s！本次 %+d 分\n", sr.success ? "成功" : "失败", sr.add_score);
-
-        double remainBest = game_query_expect(ctx);
-        if (remainBest >= 0.0)
-            printf("DP预估：当前路线期望总分 ≈ %.2f\n", (double)ctx->total_score + remainBest);
-        else
-            printf("DP预估：不可用（缓存未就绪）\n");
-    }
-
-    game_ctx_destroy(ctx);
-    return 0;
-}
-#endif
-
-#endif /* CONSOLE */
