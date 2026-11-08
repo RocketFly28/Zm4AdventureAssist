@@ -3,9 +3,9 @@
 #include <stdio.h>
 
 /*
- * 64 λ�޷���������ϣ������Murmur3 ����ϣ���
- * ������k - ����ϣ�� 64 λ��
- * ���أ�size_t ���ȵĹ�ϣֵ����������capacity
+ * 64 位无符号整数哈希函数（Murmur3 风格混合）。
+ * 参数：k - 待哈希的 64 位键
+ * 返回：size_t 长度的哈希值，类型适配capacity
  */
 static inline size_t hash_u64(uint64_t k)
 {
@@ -18,9 +18,9 @@ static inline size_t hash_u64(uint64_t k)
 }
 
 /*
- * ���� >= n ����С 2 ���ݡ�
- * ������n - Ŀ���С
- * ���أ���С�� n ����С 2 ����
+ * 返回 >= n 的最小 2 的幂。
+ * 参数：n - 目标大小
+ * 返回：不小于 n 的最小 2 的幂
  */
 static inline size_t next_pow2(size_t n)
 {
@@ -30,9 +30,9 @@ static inline size_t next_pow2(size_t n)
 }
 
 /*
- * ��ʼ������Ѱַ��ϣ����memo ���棩��
- * �����Զ�����ȡ��Ϊ 2 ���ݣ�����ȫ�����㡣
- * ������h - ��ϣ��ָ�룻init_size - ��ʼ��������ֵ
+ * 初始化开放寻址哈希表（memo 缓存）。
+ * 容量自动向上取整为 2 的幂；表项全部清零。
+ * 参数：h - 哈希表指针；init_size - 初始容量建议值
  */
 int memo_hash_init(MemoHash *h, size_t init_size)
 {
@@ -51,10 +51,10 @@ int memo_hash_init(MemoHash *h, size_t init_size)
 }
 
 /*
- * ��ȫ�س�ʼ������Ѱַ��ϣ����memo ���棩��
- * ע�⣺������Ҫʹ�������ڴ棬����Ӱ�����
- * �����Զ�����ȡ��Ϊ 2 ���ݣ�����ȫ�����㡣
- * ������h - ��ϣ��ָ�룻init_size - ��ʼ��������ֵ�� max_size - �������ֵ
+ * 安全地初始化开放寻址哈希表（memo 缓存）。
+ * 注意：尽量不要使用锁死内存，否则影响计算
+ * 容量自动向上取整为 2 的幂；表项全部清零。
+ * 参数：h - 哈希表指针；init_size - 初始容量建议值； max_size - 容量最大值
  */
 int memo_hash_init_s(MemoHash *h, size_t init_size, size_t max_size)
 {
@@ -73,7 +73,7 @@ int memo_hash_init_s(MemoHash *h, size_t init_size, size_t max_size)
     return 0;
 }
 
-/* ���ٽ������������� */
+/* 快速降序排序辅助函数 */
 static int cmp_hash(const void *a, const void *b)
 {
     const HashEntry *ea = (const HashEntry *)a;
@@ -84,31 +84,33 @@ static int cmp_hash(const void *a, const void *b)
     if (ua != ub) return ub - ua;
     if (ua == 0) return 0;
 
-    // ���� used���� val ����
+    // 都是 used，按 val 降序
     if (ea->val < eb->val) return 1;
     if (ea->val > eb->val) return -1;
     return 0;
 }
 
 /*
- * ����ϣ��ѹ����������Ҫ�ɷ֡�
- * ѹ��ʧ����������������ԭ����
- * ������h - ��ϣ��ָ��
+ * 将哈希表压缩，蒸馏主要成分。
+ * 压缩失败则不做处理，保留原表。
+ * 参数：h - 哈希表指针
+ * 注意：蒸馏没什么作用，内存上限后DP该卡死还是卡死。
+ * 所以最好不要调用memo_hash_init_s
  */
 void memo_hash_compress(MemoHash *h)
 {
     HashEntry *new_table = NULL;
     HashEntry *old_tab = h->table;
     size_t cap;
-    for (cap = h->capacity >> 1; cap > 0; cap >>= 1)//��1/2��С��ʼ����
+    for (cap = h->capacity >> 1; cap > 0; cap >>= 1)//从1/2大小开始尝试
     {
         new_table = (HashEntry *)calloc(cap, sizeof(HashEntry));
         if (new_table) break;
     }
-    if (!new_table) return; // ����±����½����ˣ��ͱ��ˣ��ջ��ܱȱ���ǿ
+    if (!new_table) return; // 如果新表都新建不了，就别动了，凑活跑比崩溃强
 
     h->table = new_table;
-    qsort(old_tab, h->capacity, sizeof(HashEntry), cmp_hash); // ѹ����val�Ƚϴ�ĸ���������·��
+    qsort(old_tab, h->capacity, sizeof(HashEntry), cmp_hash); // 压缩，val比较大的更可能是主路径
     h->capacity = cap;
     h->used_cnt = 0;
     for (size_t i = cap * 0.1; i < cap * 0.4; i++) {
@@ -129,9 +131,9 @@ void memo_hash_compress(MemoHash *h)
 
 
 /*
- * ����ϣ���������������ݣ������Ѿɱ���Ч�����¹�ϣǨ���±���
- * ����ʧ��ʱѹ����
- * ������h - ��ϣ��ָ��
+ * 将哈希表容量翻倍（扩容），并把旧表有效项重新哈希迁入新表。
+ * 扩容失败时压缩。
+ * 参数：h - 哈希表指针
  */
 void memo_hash_resize(MemoHash *h)
 {
@@ -142,7 +144,7 @@ void memo_hash_resize(MemoHash *h)
     size_t new_cap = old_cap << 1U;
     if (new_cap > h->max_capacity)
     {
-        memo_hash_compress(h); /* ��̫��ѹ�� */
+        memo_hash_compress(h); /* 表太大，压缩 */
         return;
     }
 
@@ -173,10 +175,10 @@ void memo_hash_resize(MemoHash *h)
 }
 
 /*
- * �ڹ�ϣ���в���ָ�� key��
- * ��������̽�⣻�����ղۼ�ֹͣ������ NULL��
- * ������h - ��ϣ��ָ�룻key - �����Ҽ����û� key���������λ��
- * ���أ����з��� HashEntry ָ�룻δ���з��� NULL
+ * 在哈希表中查找指定 key。
+ * 采用线性探测；遇到空槽即停止，返回 NULL。
+ * 参数：h - 哈希表指针；key - 待查找键（用户 key，不含标记位）
+ * 返回：命中返回 HashEntry 指针；未命中返回 NULL
  */
 HashEntry *memo_hash_lookup(MemoHash *h, uint64_t key)
 {
@@ -193,10 +195,10 @@ HashEntry *memo_hash_lookup(MemoHash *h, uint64_t key)
 }
 
 /*
- * ���ϣ��д���ֵ�ԣ��� key �Ѵ����򸲸Ǿ�ֵ��
- * װ������ >= 0.7 ʱ�Զ��������ݡ�
- * ������h - ��ϣ��ָ�룻key - ����val - DP ����������ֵ
- * need_lookup = false ʱ�����÷����뱣֤ key ���ڱ��У��������Ը�
+ * 向哈希表写入键值对；若 key 已存在则覆盖旧值。
+ * 装载因子 >= 0.7 时自动触发扩容。
+ * 参数：h - 哈希表指针；key - 键；val - DP 子问题最优值
+ * need_lookup = false 时，调用方必须保证 key 不在表中，否则后果自负
  */
 void memo_hash_put(MemoHash *h, uint64_t key, double val, int need_lookup)
 {
@@ -212,10 +214,10 @@ void memo_hash_put(MemoHash *h, uint64_t key, double val, int need_lookup)
     if (!need_lookup){
         HashEntry *e_chk = memo_hash_lookup(h, key);
         if (e_chk != NULL) {
-            fprintf(stderr, "�ظ� put: key=%016llx\n", (unsigned long long)key);
+            fprintf(stderr, "重复 put: key=%016llx\n", (unsigned long long)key);
             fprintf(stderr, "  new_val=%.6f, old_val=%.6f\n", val, e_chk->val);
             fprintf(stderr, "  cap=%zu, used=%zu\n", h->capacity, h->used_cnt);
-            // �ֽ� key
+            // 分解 key
             fprintf(stderr, "  mask=%u h=%u p=%u w=%u c=%u l=%u a=%u done=%u r=%u\n",
                 (unsigned)(key & 0xFFFF),
                 (unsigned)((key >> 16) & 0xF),
@@ -247,12 +249,12 @@ void memo_hash_put(MemoHash *h, uint64_t key, double val, int need_lookup)
         }
         idx = (idx + 1U) & (h->capacity - 1U);
     }
-    /* ���ݺ����۲����ߵ����Ϊ�ں˰�ȫ��ֱ�ӷ������β��룬���� abort() */
+    /* 扩容后理论不会走到这里；为内核安全，直接放弃本次插入，不再 abort() */
 }
 
 /*
- * �ͷŹ�ϣ��ռ�õ��ڴ棬������ֶΡ�
- * ������h - ��ϣ��ָ��
+ * 释放哈希表占用的内存，并清空字段。
+ * 参数：h - 哈希表指针
  */
 void memo_hash_destroy(MemoHash *h)
 {
