@@ -482,7 +482,7 @@ emcc src/dpsolver/Adventure.c src/dpsolver/dpCal.c src/dpsolver/hash.c \
 
 | 选项 | 含义 | 默认 |
 |---|---|---|
-| `--role N` | 角色编号 1~7 | 6（小雨） |
+| `--role N` | 角色编号 1~7 | 6（xiao_yu） |
 | `--flash` | 神经网络推理（默认） | **开** |
 | `--precision` | 精确 DP / 查表 | 关 |
 | `--target T` | 目标总分；`620` / `480` 走多局冲刺模型，其余走单局模型 | 620 |
@@ -494,7 +494,7 @@ emcc src/dpsolver/Adventure.c src/dpsolver/dpCal.c src/dpsolver/hash.c \
 以及该步之后的达标概率或模型置信度：
 
 ```
-Role  : 6 (xiao yu)
+Role  : 6 (xiao_yu)
 Attrs : hp=3  pow=4  wis=5  cha=5  luc=4  agi=3
 Model : flash (Neural Network, zero-search)
 Note  : --target has no effect in flash mode
