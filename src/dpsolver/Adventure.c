@@ -1,4 +1,4 @@
-#define _CRT_SECURE_NO_WARNINGS
+ï»¿#define _CRT_SECURE_NO_WARNINGS
 
 #include "Adventure.h"
 #include "hash.h"
@@ -13,52 +13,52 @@
 #include <assert.h>
 #endif
 /* ===========================================================================
- * ±¾ÎÄ¼şÎª"Éú´æ´óÃ°ÏÕ"µÄ´¿¼ÆËãÄÚºË¡£
+ * æœ¬æ–‡ä»¶ä¸º"ç”Ÿå­˜å¤§å†’é™©"çš„çº¯è®¡ç®—å†…æ ¸ã€‚
  *
- *   - Ò»ÇĞ¿É±ä×´Ì¬¶¼·â×°ÔÚ GameContext Àï£¬ÓÉ game_ctx_create / game_ctx_destroy
- *     ¹ÜÀí£»DP º¯ÊıÖ»Í¨¹ıÖ¸Õë²ÎÊı·ÃÎÊ memo£¬²»ÅöÈÎºÎÈ«¾Ö±äÁ¿£¬Òò´Ë¿ÉÖØÈë¡¢
- *     Ö§³ÖÍ¬Ò»½ø³ÌÍ¬Ê±ÅÜ¶à¾Ö£¨ºó¶Ë¶à»á»° / WASM ¾ù¿É£©¡£
- *   - Ìâ¿â³£Á¿¡¢¹æÔòÊı×éÎª static const Ö»¶ÁÊı¾İ£¬¿É±»¶à¾Ö°²È«¹²Ïí£¬²»ĞèÒª¸Ä¶¯¡£
- *   - ¿ØÖÆÌ¨½»»¥ÒÑ²ğ·Öµ½ cli.c / cli.h£¬½ø³ÌÈë¿ÚÔÚ main.c£º
- *       Î´¶¨Òå CONSOLE  ¡ú ±àÒëÎª´¿ÄÚºË¿â£¬²»°üº¬ÈÎºÎ IO/main£»
- *       ¶¨ÒåÁË CONSOLE  ¡ú ÓÉ main.c Ìá¹©Èë¿Ú£¬±¾ÎÄ¼ş²»ÔÙ°üº¬ main¡£
+ *   - ä¸€åˆ‡å¯å˜çŠ¶æ€éƒ½å°è£…åœ¨ GameContext é‡Œï¼Œç”± game_ctx_create / game_ctx_destroy
+ *     ç®¡ç†ï¼›DP å‡½æ•°åªé€šè¿‡æŒ‡é’ˆå‚æ•°è®¿é—® memoï¼Œä¸ç¢°ä»»ä½•å…¨å±€å˜é‡ï¼Œå› æ­¤å¯é‡å…¥ã€
+ *     æ”¯æŒåŒä¸€è¿›ç¨‹åŒæ—¶è·‘å¤šå±€ï¼ˆåç«¯å¤šä¼šè¯ / WASM å‡å¯ï¼‰ã€‚
+ *   - é¢˜åº“å¸¸é‡ã€è§„åˆ™æ•°ç»„ä¸º static const åªè¯»æ•°æ®ï¼Œå¯è¢«å¤šå±€å®‰å…¨å…±äº«ï¼Œä¸éœ€è¦æ”¹åŠ¨ã€‚
+ *   - æ§åˆ¶å°äº¤äº’å·²æ‹†åˆ†åˆ° cli.c / cli.hï¼Œè¿›ç¨‹å…¥å£åœ¨ main.cï¼š
+ *       æœªå®šä¹‰ CONSOLE  â†’ ç¼–è¯‘ä¸ºçº¯å†…æ ¸åº“ï¼Œä¸åŒ…å«ä»»ä½• IO/mainï¼›
+ *       å®šä¹‰äº† CONSOLE  â†’ ç”± main.c æä¾›å…¥å£ï¼Œæœ¬æ–‡ä»¶ä¸å†åŒ…å« mainã€‚
  * =========================================================================== */
 
-/* TRUE / FALSE ÓëÄÚºË bool ÀàĞÍ¶¨Òå¼û Adventure.h£¨dpCal.c ¹²ÓÃ£©¡£ */
+/* TRUE / FALSE ä¸å†…æ ¸ bool ç±»å‹å®šä¹‰è§ Adventure.hï¼ˆdpCal.c å…±ç”¨ï¼‰ã€‚ */
 
-/* ------------------------------ ÄÚ²¿Êı¾İÀàĞÍ ------------------------------ */
-/* Option / Question / StateVec µÄÍêÕû¶¨ÒåÒÑËæÄÚºË½Ó¿ÚÒ»ÆğÒÆµ½ Adventure.h
- * £¨dpCal.c ĞèÒª°´ options[] È¡¹æÔòÊı¾İ£©£¬´Ë´¦Ö±½Ó¸´ÓÃÍ¬Ãû struct¡£ */
+/* ------------------------------ å†…éƒ¨æ•°æ®ç±»å‹ ------------------------------ */
+/* Option / Question / StateVec çš„å®Œæ•´å®šä¹‰å·²éšå†…æ ¸æ¥å£ä¸€èµ·ç§»åˆ° Adventure.h
+ * ï¼ˆdpCal.c éœ€è¦æŒ‰ options[] å–è§„åˆ™æ•°æ®ï¼‰ï¼Œæ­¤å¤„ç›´æ¥å¤ç”¨åŒå structã€‚ */
 
 #define OPT_PER_QUESTION 4U
 
-/* ------------------------------ Ìâ¿â£¨Ö»¶Á£© ------------------------------ */
-/* Ã¿µÀÌâ 4 ¸öÑ¡Ïî£¬options[0]~options[3] ¶ÔÓ¦ opt_1~opt_4¡£ */
+/* ------------------------------ é¢˜åº“ï¼ˆåªè¯»ï¼‰ ------------------------------ */
+/* æ¯é“é¢˜ 4 ä¸ªé€‰é¡¹ï¼Œoptions[0]~options[3] å¯¹åº” opt_1~opt_4ã€‚ */
 
-// questionType1£º4 µÀÌâ£¨Ã¿µÀ 4 ¸öÑ¡Ïî£©
+// questionType1ï¼š4 é“é¢˜ï¼ˆæ¯é“ 4 ä¸ªé€‰é¡¹ï¼‰
 static const Question questionType1[] = {
-    /* 101 ÉÌµê¹ºÎï */
+    /* 101 å•†åº—è´­ç‰© */
     {101, 1, {
         {{.luck = 4}   , {.luck = -1, .agility = 1}, {.charm = -1} },  /* opt_1 */
         {{.agility = 4}, {.luck = 1, .agility = -1}, {.charm = -1} },  /* opt_2 */
         {{.luck = 5}   , {.power = 1}              , {.health = -1}},  /* opt_3 */
         {{.charm = 3}  , {.power = 1, .charm = -1} , {.charm = -1} },  /* opt_4 */
     }},
-    /* 102 ÉñÃØÀñÎï */
+    /* 102 ç¥ç§˜ç¤¼ç‰© */
     {102, 1, {
         {{.power = 4}  , {.power = 1}             , {.health = -1, .power = -1}},  /* opt_1 */
         {{.wisdom = 4} , {.health = 1, .power = 1}, {.health = -1, .power = 2} },  /* opt_2 */
         {{.charm = 4}  , {.luck = 1}              , {.charm = -1}              },  /* opt_3 */
         {{.agility = 4}, {.agility = 1}           , {.charm = -1}              },  /* opt_4 */
     }},
-    /* 103 Ã»ºÃÎäÆ÷ */
+    /* 103 æ²¡å¥½æ­¦å™¨ */
     {103, 1, {
         {{.power = 4} , {.charm = -1}              , {.health = -1}             },  /* opt_1 */
         {{.charm = 3} , {.power = 1, .agility = -1}, {0}                        },  /* opt_2 */
         {{.luck = 5}  , {.power = 1}               , {.charm = -1}              },  /* opt_3 */
         {{.wisdom = 5}, {.power = 2}               , {.health = -1, .power = -1}},  /* opt_4 */
     }},
-    /* 104 ×å³¤ÈÎÎñ */
+    /* 104 æ—é•¿ä»»åŠ¡ */
     {104, 1, {
         {{.power = 4} , {.power = 1} , {.health = -1}},  /* opt_1 */
         {{.charm = 4} , {0}          , {.health = -1}},  /* opt_2 */
@@ -67,72 +67,72 @@ static const Question questionType1[] = {
     }},
 };
 
-// questionType2£º10 µÀÌâ£¨Ã¿µÀ 4 ¸öÑ¡Ïî£©
+// questionType2ï¼š10 é“é¢˜ï¼ˆæ¯é“ 4 ä¸ªé€‰é¡¹ï¼‰
 static const Question questionType2[] = {
-    /* 201 ĞşÎäÃÅ */
+    /* 201 ç„æ­¦é—¨ */
     {201, 2, {
         {{.wisdom = 5} , {.power = 1} , {0}            },  /* opt_1 */
         {{.luck = 5}   , {.charm = -1}, {.charm = -1}  },  /* opt_2 */
         {{.charm = 4}  , {.charm = 1} , {.charm = -1}  },  /* opt_3 */
         {{.agility = 4}, {0}          , {.agility = -1}},  /* opt_4 */
     }},
-    /* 202 Ñ©Á«Ó×Ãç */
+    /* 202 é›ªè²å¹¼è‹— */
     {202, 2, {
         {{.health = 3} , {.health = 1}             , {.health = -1}               },  /* opt_1 */
         {{.agility = 5}, {.health = 1, .wisdom = 1}, {.health = -1}               },  /* opt_2 */
         {{.wisdom = 5} , {.health = 1, .wisdom = 1}, {0}                          },  /* opt_3 */
         {{.luck = 5}   , {.health = 2}             , {.health = -1, .agility = -1}},  /* opt_4 */
     }},
-    /* 203 ÔìÃÎÍşÁ® */
+    /* 203 é€ æ¢¦å¨å»‰ */
     {203, 2, {
         {{.power = 4} , {.health = 1}, {.health = -1}},  /* opt_1 */
         {{.wisdom = 4}, {.power = 1} , {.wisdom = 1} },  /* opt_2 */
         {{.charm = 4} , {.charm = 1} , {0}           },  /* opt_3 */
         {{.luck = 4}  , {.wisdom = 1}, {0}           },  /* opt_4 */
     }},
-    /* 204 À¶É«Ë®Êó */
+    /* 204 è“è‰²æ°´é¼  */
     {204, 2, {
         {{.health = 127}, {0}                       , {.health = -1}               },  /* opt_1 */
         {{.charm = 5}   , {.power = 1, .charm = 1}  , {.health = -1}               },  /* opt_2 */
         {{.luck = 5}    , {.power = 1, .luck = 1}   , {.health = -1}               },  /* opt_3 */
         {{.agility = 5} , {.power = 1, .agility = 1}, {.health = -1, .agility = -1}},  /* opt_4 */
     }},
-    /* 205 ·ÉÌì´óµÁ */
+    /* 205 é£å¤©å¤§ç›— */
     {205, 2, {
         {{.agility = 5}            , {.power = 2, .charm = -1} , {.health = -1}},  /* opt_1 */
         {{.power = 4, .agility = 3}, {.health = -1, .power = 2}, {0}           },  /* opt_2 */
         {{.wisdom = 5}             , {.wisdom = 1, .luck = 1}  , {.charm = -1} },  /* opt_3 */
         {{.charm = 5}              , {.charm = 1}              , {.charm = -1} },  /* opt_4 */
     }},
-    /* 206 ÀÏÈËË¤µ¹ */
+    /* 206 è€äººæ‘”å€’ */
     {206, 2, {
         {{.power = 3, .wisdom = 4}, {.wisdom = 1}            , {.health = -1, .charm = -1}},  /* opt_1 */
         {{.charm = 5}             , {.health = 1, .charm = 1}, {.health = -1}             },  /* opt_2 */
         {{.agility = 4}           , {0}                      , {.charm = -1}              },  /* opt_3 */
         {{.health = 127}          , {0}                      , {.wisdom = -1, .charm = -1}},  /* opt_4 */
     }},
-    /* 207 Ê¥µ®ÀÏÈË */
+    /* 207 åœ£è¯è€äºº */
     {207, 2, {
         {{.agility = 4} , {.agility = 1}          , {.charm = -1} },  /* opt_1 */
         {{.power = 5}   , {.power = 1}            , {.health = -1}},  /* opt_2 */
         {{.charm = 3}   , {.wisdom = 1, .luck = 1}, {0}           },  /* opt_3 */
         {{.health = 127}, {0}                     , {.wisdom = -1}},  /* opt_4 */
     }},
-    /* 208 Ô¶Ñó´ó´¬ */
+    /* 208 è¿œæ´‹å¤§èˆ¹ */
     {208, 2, {
         {{.wisdom = 4}          , {.wisdom = 1, .charm = 1}, {.charm = -1} },  /* opt_1 */
         {{.luck = 5}            , {.health = -1}           , {.health = -1}},  /* opt_2 */
         {{.charm = 4, .luck = 4}, {.luck = 1}              , {.charm = -1} },  /* opt_3 */
         {{.charm = 4}           , {.charm = -1}            , {.health = -1}},  /* opt_4 */
     }},
-    /* 209 ³¤°²³Ç */
+    /* 209 é•¿å®‰åŸ */
     {209, 2, {
         {{.wisdom = 4}             , {.wisdom = 1}             , {.charm = -1}  },  /* opt_1 */
         {{.charm = 4, .luck = 3}   , {.power = 1}              , {.charm = -1}  },  /* opt_2 */
         {{.power = 4}              , {.charm = 1}              , {.health = -1} },  /* opt_3 */
         {{.charm = 3, .agility = 4}, {.power = 1, .agility = 1}, {.agility = -1}},  /* opt_4 */
     }},
-    /* 210 ÁªÃËÕĞÈË */
+    /* 210 è”ç›Ÿæ‹›äºº */
     {210, 2, {
         {{.agility = 5}, {.charm = 1, .agility = 1}, {0}          },  /* opt_1 */
         {{.power = 5}  , {.power = 1, .charm = 1}  , {0}          },  /* opt_2 */
@@ -141,107 +141,107 @@ static const Question questionType2[] = {
     }},
 };
 
-// questionType3£º15 µÀÌâ£¨Ã¿µÀ 4 ¸öÑ¡Ïî£©
+// questionType3ï¼š15 é“é¢˜ï¼ˆæ¯é“ 4 ä¸ªé€‰é¡¹ï¼‰
 static const Question questionType3[] = {
-    /* 301 Æ½°²´å */
+    /* 301 å¹³å®‰æ‘ */
     {301, 3, {
         {{.power = 6}  , {.health = 1, .charm = 1}, {.health = -2}               },  /* opt_1 */
         {{.agility = 6}, {.agility = 1}           , {.health = -1, .agility = -1}},  /* opt_2 */
         {{.charm = 6}  , {.power = 1}             , {.health = -1, .charm = -1}  },  /* opt_3 */
         {{.luck = 5}   , {.charm = -1, .luck = 1} , {.health = -1}               },  /* opt_4 */
     }},
-    /* 302 ±ëº·»¢¾« */
+    /* 302 å½ªæ‚è™ç²¾ */
     {302, 3, {
         {{.power = 6}               , {.power = 1}  , {.health = -2}             },  /* opt_1 */
         {{.wisdom = 4, .agility = 5}, {.agility = 1}, {.health = -2}             },  /* opt_2 */
         {{.power = 4, .wisdom = 5}  , {.wisdom = 1} , {.health = -2}             },  /* opt_3 */
         {{.charm = 5, .luck = 4}    , {.charm = 1}  , {.health = -1, .charm = -1}},  /* opt_4 */
     }},
-    /* 303 µÇÉ½ºÚÓ° */
+    /* 303 ç™»å±±é»‘å½± */
     {303, 3, {
         {{.charm = 5, .luck = 4}, {0}                       , {.health = -1, .charm = -1}  },  /* opt_1 */
         {{.power = 6}           , {.health = 1, .power = -1}, {.health = -2}               },  /* opt_2 */
         {{.charm = 6}           , {.health = 1}             , {.health = -1, .agility = -1}},  /* opt_3 */
         {{.agility = 6}         , {.agility = -1}           , {.health = -2}               },  /* opt_4 */
     }},
-    /* 304 ËÄÍ·³æ */
+    /* 304 å››å¤´è™« */
     {304, 3, {
         {{.power = 6, .agility = 5}, {.power = 1, .charm = -1}, {.health = -1}},  /* opt_1 */
         {{.power = 7}              , {.health = 1}            , {.health = -1}},  /* opt_2 */
         {{.charm = 7}              , {.charm = 1}             , {.health = -2}},  /* opt_3 */
         {{.agility = 6}            , {.agility = -1}          , {.health = -2}},  /* opt_4 */
     }},
-    /* 305 Í¯×ÓÁ¶µ¤ */
+    /* 305 ç«¥å­ç‚¼ä¸¹ */
     {305, 3, {
         {{.power = 5, .luck = 5}  , {.health = 1, .power = 1} , {.health = -1}               },  /* opt_1 */
         {{.charm = 6}             , {.health = 1, .power = 1} , {0}                          },  /* opt_2 */
         {{.luck = 5, .agility = 5}, {.power = 1, .agility = 1}, {.health = -1, .agility = -1}},  /* opt_3 */
         {{.health = 127}          , {0}                       , {.charm = -2}                },  /* opt_4 */
     }},
-    /* 306 Ó×Í¯ÆøÇò */
+    /* 306 å¹¼ç«¥æ°”çƒ */
     {306, 3, {
         {{.health = 127}, {0}                    , {.health = -1, .charm = -1}},  /* opt_1 */
         {{.agility = 6} , {.charm = 1, .luck = 1}, {.agility = -1}            },  /* opt_2 */
         {{.charm = 5}   , {.charm = 1}           , {.charm = -1}              },  /* opt_3 */
         {{.luck = 5}    , {.charm = -1}          , {.health = -1}             },  /* opt_4 */
     }},
-    /* 307 ÖìÈ¸½Ö */
+    /* 307 æœ±é›€è¡— */
     {307, 3, {
         {{.power = 6}               , {.power = 1}                , {.health = -2}               },  /* opt_1 */
         {{.wisdom = 4, .charm = 5}  , {.charm = 1}                , {.health = -2}               },  /* opt_2 */
         {{.wisdom = 5, .agility = 4}, {.health = -1, .agility = 1}, {.health = -2}               },  /* opt_3 */
         {{.luck = 4, .agility = 4}  , {.health = -1}              , {.health = -1, .agility = -1}},  /* opt_4 */
     }},
-    /* 308 ÁªÃËÕóÓª */
+    /* 308 è”ç›Ÿé˜µè¥ */
     {308, 3, {
         {{.luck = 6}   , {.luck = 1}   , {0}},  /* opt_1 */
         {{.power = 6}  , {.power = 1}  , {0}},  /* opt_2 */
         {{.agility = 6}, {.agility = 1}, {0}},  /* opt_3 */
         {{.health = 6} , {.health = 1} , {0}},  /* opt_4 */
     }},
-    /* 309 ½õĞå·å */
+    /* 309 é”¦ç»£å³° */
     {309, 3, {
         {{.luck = 6}   , {.health = 1}, {.charm = -1}                },  /* opt_1 */
         {{.agility = 6}, {.charm = -1}, {.health = -1, .agility = -1}},  /* opt_2 */
         {{.power = 6}  , {.charm = 1} , {.health = -1, .power = -1}  },  /* opt_3 */
         {{.charm = 6}  , {.wisdom = 1}, {.health = -1}               },  /* opt_4 */
     }},
-    /* 310 ÉîÒ¹ÆÆÃí */
+    /* 310 æ·±å¤œç ´åº™ */
     {310, 3, {
         {{.luck = 5}   , {.health = -1, .power = -1}, {.health = -1, .agility = -1}             },  /* opt_1 */
         {{.wisdom = 6} , {.wisdom = 1}              , {0}                                       },  /* opt_2 */
         {{.health = 5} , {.health = -1}             , {.health = -1, .power = -1, .agility = -1}},  /* opt_3 */
         {{.agility = 5}, {.wisdom = 1}              , {.agility = -1}                           },  /* opt_4 */
     }},
-    /* 311 Ê±¹âÖ®ÖÛ */
+    /* 311 æ—¶å…‰ä¹‹èˆŸ */
     {311, 3, {
         {{.charm = 7} , {.power = 2}             , {.power = 1} },  /* opt_1 */
         {{.power = 7} , {.power = 1, .wisdom = 1}, {.wisdom = 1}},  /* opt_2 */
         {{.luck = 6}  , {.luck = 1}              , {0}          },  /* opt_3 */
         {{.wisdom = 6}, {.wisdom = 1}            , {0}          },  /* opt_4 */
     }},
-    /* 312 Ê®°ËÂŞºº */
+    /* 312 åå…«ç½—æ±‰ */
     {312, 3, {
         {{.power = 5, .wisdom = 4}, {.charm = 1}              , {.health = -1}},  /* opt_1 */
         {{.wisdom = 6}            , {.health = 1, .wisdom = 1}, {.health = 1} },  /* opt_2 */
         {{.luck = 6}              , {.luck = 1}               , {.health = -1}},  /* opt_3 */
         {{.charm = 6}             , {.power = 1}              , {.charm = -1} },  /* opt_4 */
     }},
-    /* 313 ÆßÏÉÅ® */
+    /* 313 ä¸ƒä»™å¥³ */
     {313, 3, {
         {{.charm = 6}   , {.charm = 2}, {0}           },  /* opt_1 */
         {{.health = 127}, {0}         , {.health = -1}},  /* opt_2 */
         {{.luck = 6}    , {0}         , {0}           },  /* opt_3 */
         {{.health = 127}, {0}         , {.health = -1}},  /* opt_4 */
     }},
-    /* 314 —ƒè»Íâ¹Ò */
+    /* 314 æ¢¼æŒå¤–æŒ‚ */
     {314, 3, {
         {{0}            , {.power = 1, .wisdom = 1}, {0}                        },  /* opt_1 */
         {{0}            , {.wisdom = 1, .charm = 1}, {0}                        },  /* opt_2 */
         {{.health = 127}, {0}                      , {.health = -9, .charm = -9}},  /* opt_3 */
         {{.health = 127}, {0}                      , {.health = -1, .charm = -1}},  /* opt_4 */
     }},
-    /* 315 ÀÏÕß´ò×ø */
+    /* 315 è€è€…æ‰“å */
     {315, 3, {
         {{0}         , {.wisdom = 1} , {0}           },  /* opt_1 */
         {{.power = 7}, {.power = 1}  , {.health = -1}},  /* opt_2 */
@@ -250,51 +250,51 @@ static const Question questionType3[] = {
     }},
 };
 
-// questionType4£º7 µÀÌâ£¨Ã¿µÀ 4 ¸öÑ¡Ïî£©
+// questionType4ï¼š7 é“é¢˜ï¼ˆæ¯é“ 4 ä¸ªé€‰é¡¹ï¼‰
 static const Question questionType4[] = {
-    /* 401 ÁğÁ§¹¬ */
+    /* 401 ç‰ç’ƒå®« */
     {401, 4, {
         {{.wisdom = 6, .agility = 8}, {.wisdom = 1, .agility = 1}, {.health = -1}},  /* opt_1 */
         {{.luck = 9}                , {.luck = 1}                , {.health = -2}},  /* opt_2 */
         {{.wisdom = 8, .agility = 6}, {.wisdom = 1, .agility = -1}, {.health = -1}},  /* opt_3 */
         {{.power = 8}               , {.health = -1, .power = 1} , {.health = -1}},  /* opt_4 */
     }},
-    /* 402 ÌÆÉ®ÊÜÉË */
+    /* 402 å”åƒ§å—ä¼¤ */
     {402, 4, {
         {{.charm = 8}   , {.luck = 1}               , {.health = -1}},  /* opt_1 */
         {{.agility = 9} , {.power = 1, .agility = 1}, {.health = -2}},  /* opt_2 */
         {{.wisdom = 8}  , {.power = 1, .charm = -1} , {.health = -1}},  /* opt_3 */
         {{.health = 127}, {0}                       , {.health = -1}},  /* opt_4 */
     }},
-    /* 403 ÏøÌìÈ® */
+    /* 403 å“®å¤©çŠ¬ */
     {403, 4, {
         {{.health = 127}            , {0}           , {.health = -1, .agility = -1}},  /* opt_1 */
         {{.agility = 8}             , {.agility = 1}, {.wisdom = -1}               },  /* opt_2 */
         {{.charm = 8}               , {.power = 1, .charm = 1}, {.charm = -1}},  /* opt_3 */
         {{.luck = 8}                , {.health = 1} , {.charm = -1}                },  /* opt_4 */
     }},
-    /* 404 »Ã¾µ¸ó */
+    /* 404 å¹»é•œé˜ */
     {404, 4, {
         {{.power = 9} , {.power = 1} , {.health = -1}             },  /* opt_1 */
         {{.wisdom = 8}, {.wisdom = 1}, {.health = -1, .charm = -1}},  /* opt_2 */
         {{.luck = 8}  , {.luck = 1}  , {.health = -2}             },  /* opt_3 */
         {{.charm = 9} , {.charm = 1} , {.agility = -1}            },  /* opt_4 */
     }},
-    /* 405 ÀÏÕßÏÂÆå */
+    /* 405 è€è€…ä¸‹æ£‹ */
     {405, 4, {
         {{.wisdom = 9} , {.power = 1, .wisdom = 1}, {.charm = -1} },  /* opt_1 */
         {{.power = 8}  , {.charm = 1}             , {.health = -1}},  /* opt_2 */
         {{.agility = 8}, {.charm = 1}             , {0}           },  /* opt_3 */
         {{.luck = 9}   , {.power = 1, .wisdom = 1}, {.health = -1}},  /* opt_4 */
     }},
-    /* 406 ¹ÛÒôÍ¨Ìì */
+    /* 406 è§‚éŸ³é€šå¤© */
     {406, 4, {
         {{.power = 9}             , {.charm = 2}               , {.health = -2}             },  /* opt_1 */
         {{.power = 6, .charm = 8} , {.charm = -1, .agility = 2}, {.health = -1, .charm = -1}},  /* opt_2 */
         {{.power = 6, .wisdom = 8}, {.power = 2, .charm = -1}  , {.health = -2, .charm = -2}},  /* opt_3 */
         {{.luck = 6, .agility = 8}, {.health = -1, .agility = 1} , {.health = -2}             },  /* opt_4 */
     }},
-    /* 407 ÂİĞıµØÓü */
+    /* 407 èºæ—‹åœ°ç‹± */
     {407, 4, {
         {{.power = 9}            , {.power = 1, .wisdom = 1}                          , {.health = -2, .power = 1}   },  /* opt_1 */
         {{.agility = 8}          , {.agility = 1}                                     , {.health = -1, .agility = -1}},  /* opt_2 */
@@ -303,37 +303,37 @@ static const Question questionType4[] = {
     }},
 };
 
-// questionType5£º5 µÀÌâ£¨Ã¿µÀ 4 ¸öÑ¡Ïî£©
+// questionType5ï¼š5 é“é¢˜ï¼ˆæ¯é“ 4 ä¸ªé€‰é¡¹ï¼‰
 static const Question questionType5[] = {
-    /* 501 ½ğÖ®×æÎ× */
+    /* 501 é‡‘ä¹‹ç¥–å·« */
     {501, 5, {
         {{.power = 10}              , {0}, {.health = -3}},  /* opt_1 */
         {{.charm = 10}              , {0}, {.health = -3}},  /* opt_2 */
         {{.wisdom = 7, .agility = 9}, {0}, {.health = -3}},  /* opt_3 */
         {{.luck = 7, .agility = 9}  , {0}, {.health = -3}},  /* opt_4 */
     }},
-    /* 502 Ä¾Ö®×æÎ× */
+    /* 502 æœ¨ä¹‹ç¥–å·« */
     {502, 5, {
         {{.wisdom = 9, .luck = 7}  , {0}, {.health = -3}},  /* opt_1 */
         {{.power = 9, .agility = 7}, {0}, {.health = -3}},  /* opt_2 */
         {{.health = 127}           , {0}, {.health = -3}},  /* opt_3 */
         {{.health = 127}           , {0}, {.health = -3}},  /* opt_4 */
     }},
-    /* 503 Ë®Ö®×æÎ× */
+    /* 503 æ°´ä¹‹ç¥–å·« */
     {503, 5, {
         {{.luck = 8, .agility = 8}, {0}, {.health = -3}},  /* opt_1 */
         {{.power = 10}            , {0}, {.health = -3}},  /* opt_2 */
         {{.power = 7, .wisdom = 9}, {0}, {.health = -3}},  /* opt_3 */
         {{.charm = 10}            , {0}, {.health = -3}},  /* opt_4 */
     }},
-    /* 504 »ğÖ®×æÎ× */
+    /* 504 ç«ä¹‹ç¥–å·« */
     {504, 5, {
         {{.charm = 9, .agility = 7}, {0}, {.health = -3}},  /* opt_1 */
         {{.agility = 10}           , {0}, {.health = -3}},  /* opt_2 */
         {{.wisdom = 10}            , {0}, {.health = -3}},  /* opt_3 */
         {{.power = 10}             , {0}, {.health = -3}},  /* opt_4 */
     }},
-    /* 505 Í¨Ìì½ÌÖ÷ */
+    /* 505 é€šå¤©æ•™ä¸» */
     {505, 5, {
         {{.power = 10}              , {0}, {.health = -3}},  /* opt_1 */
         {{.power = 7, .wisdom = 9}  , {0}, {.health = -3}},  /* opt_2 */
@@ -342,40 +342,49 @@ static const Question questionType5[] = {
     }},
 };
 
-/* ------------------------------ ½ÇÉ«³õÊ¼ÊôĞÔ£¨Ö»¶Á£© ------------------------------ */
+const Question *g_allQuestion[5] =
+{
+    questionType1,
+    questionType2,
+    questionType3,
+    questionType4,
+    questionType5
+};
+
+/* ------------------------------ è§’è‰²åˆå§‹å±æ€§ï¼ˆåªè¯»ï¼‰ ------------------------------ */
 static const Attrs g_initAttrs[7] = {
-    /* Ë÷Òı = RoleId - 1 */
-    {.health = 3, .power = 4, .wisdom = 5, .charm = 5, .luck = 4, .agility = 3},  /* Ğ¡ÌÆ */
-    {.health = 4, .power = 5, .wisdom = 4, .charm = 3, .luck = 4, .agility = 4},  /* Ğ¡ºï */
-    {.health = 6, .power = 4, .wisdom = 3, .charm = 3, .luck = 3, .agility = 3},  /* Ğ¡Öí */
-    {.health = 3, .power = 3, .wisdom = 4, .charm = 3, .luck = 3, .agility = 6},  /* Ğ¡É³ */
-    {.health = 4, .power = 3, .wisdom = 4, .charm = 4, .luck = 5, .agility = 4},  /* Ğ¡°× */
-    {.health = 3, .power = 3, .wisdom = 4, .charm = 5, .luck = 3, .agility = 6},  /* Ğ¡Óñ */
-    {.health = 5, .power = 4, .wisdom = 4, .charm = 4, .luck = 3, .agility = 4}   /* Ğ¡ß¸ */
+    /* ç´¢å¼• = RoleId - 1 */
+    {.health = 3, .power = 4, .wisdom = 5, .charm = 5, .luck = 4, .agility = 3},  /* å°å” */
+    {.health = 4, .power = 5, .wisdom = 4, .charm = 3, .luck = 4, .agility = 4},  /* å°çŒ´ */
+    {.health = 6, .power = 4, .wisdom = 3, .charm = 3, .luck = 3, .agility = 3},  /* å°çŒª */
+    {.health = 3, .power = 3, .wisdom = 4, .charm = 3, .luck = 3, .agility = 6},  /* å°æ²™ */
+    {.health = 4, .power = 3, .wisdom = 4, .charm = 4, .luck = 5, .agility = 4},  /* å°ç™½ */
+    {.health = 3, .power = 3, .wisdom = 4, .charm = 5, .luck = 3, .agility = 6},  /* å°ç‰ */
+    {.health = 5, .power = 4, .wisdom = 4, .charm = 4, .luck = 3, .agility = 4}   /* å°å’ */
 };
 const Attrs *const g_pInitAttrs = g_initAttrs;
 
-/* ------------------------------ ¹æÔò³£Á¿£¨Ö»¶Á£© ------------------------------ */
-/* gid 0~4£ºÌâĞÍ½×¶Î£¬¼û judgeGroup */
+/* ------------------------------ è§„åˆ™å¸¸é‡ï¼ˆåªè¯»ï¼‰ ------------------------------ */
+/* gid 0~4ï¼šé¢˜å‹é˜¶æ®µï¼Œè§ judgeGroup */
 const int totalQs[5] = { 4, 10, 15, 7, 5 };
 const int needPick[5] = { 1, 2, 3, 3, 1 };
 
-/* ¸÷ÌâĞÍ³É¹¦ / Ê§°ÜµÃ·Ö */
+/* å„é¢˜å‹æˆåŠŸ / å¤±è´¥å¾—åˆ† */
 const int successScore[5] = { 6, 6, 9, 12, 19 };
 const int failScore[5]    = { 3, 3, 4, 6, 9 };
 
-/* maxRemainingScore[done_cnt]£ºÊ£ÓàÌâÄ¿È«³É¹¦Ê±µÄ×î¸ß·Ö£¬ÓÃ×÷ dpGoalProb ¼ôÖ¦ */
+/* maxRemainingScore[done_cnt]ï¼šå‰©ä½™é¢˜ç›®å…¨æˆåŠŸæ—¶çš„æœ€é«˜åˆ†ï¼Œç”¨ä½œ dpGoalProb å‰ªæ */
 const int maxRemainingScore[11] = {
     100, 94, 88, 82, 73, 64, 55, 43, 31, 19, 0
 };
 
-/* ------------------------------ ´¿¹¤¾ßº¯Êı£¨ÎŞ¸±×÷ÓÃ£© ------------------------------ */
+/* ------------------------------ çº¯å·¥å…·å‡½æ•°ï¼ˆæ— å‰¯ä½œç”¨ï¼‰ ------------------------------ */
 typedef int bool;
 
 /*
- * ÅĞ¶Ïµ±Ç°ÊôĞÔÊÇ·ñÂú×ãÄ³Ñ¡ÏîµÄ³É¹¦ÅĞ¶¨ÃÅ¼÷¡£
- * ²ÎÊı£ºcur - µ±Ç°ÊôĞÔ£»cond - ËùĞèÃÅ¼÷ÊôĞÔ
- * ·µ»Ø£ºËùÓĞÎ¬¶È¾ù >= ÃÅ¼÷·µ»Ø TRUE£¬·ñÔò FALSE
+ * åˆ¤æ–­å½“å‰å±æ€§æ˜¯å¦æ»¡è¶³æŸé€‰é¡¹çš„æˆåŠŸåˆ¤å®šé—¨æ§›ã€‚
+ * å‚æ•°ï¼šcur - å½“å‰å±æ€§ï¼›cond - æ‰€éœ€é—¨æ§›å±æ€§
+ * è¿”å›ï¼šæ‰€æœ‰ç»´åº¦å‡ >= é—¨æ§›è¿”å› TRUEï¼Œå¦åˆ™ FALSE
  */
 static inline bool isSuccess(Attrs cur, Attrs cond)
 {
@@ -383,7 +392,7 @@ static inline bool isSuccess(Attrs cur, Attrs cond)
         && (cur.charm >= cond.charm) && (cur.luck >= cond.luck) && (cur.agility >= cond.agility);
 }
 
-/* Ó¦ÓÃÊôĞÔÔö¼õ£ºpwcla ÏÂÏŞÇ¯Î» 0£»health ²»Ç¯Î»ÔÊĞí¸ºÊı */
+/* åº”ç”¨å±æ€§å¢å‡ï¼špwcla ä¸‹é™é’³ä½ 0ï¼›health ä¸é’³ä½å…è®¸è´Ÿæ•° */
 Attrs apply_attr(const Attrs old, const Attrs delta)
 {
     Attrs out;
@@ -397,7 +406,7 @@ Attrs apply_attr(const Attrs old, const Attrs delta)
     return out;
 }
 
-/* done_cnt -> ÌâĞÍ½×¶Î 0~4 */
+/* done_cnt -> é¢˜å‹é˜¶æ®µ 0~4 */
 int judgeGroup(int done_cnt)
 {
     switch (done_cnt) {
@@ -411,9 +420,9 @@ int judgeGroup(int done_cnt)
 }
 
 /*
- * ½«ÌâÄ¿ÏÂ±ê q_idx ×ª»»Îª¶ÔÓ¦Î»µÄ bitmask¡£
- * ²ÎÊı£ºq_idx - ±¾×éÄÚÌâÄ¿ÏÂ±ê£¨0 Æğ£©
- * ·µ»Ø£º½öµÚ q_idx Î»Îª 1 µÄ uint16_t ÑÚÂë
+ * å°†é¢˜ç›®ä¸‹æ ‡ q_idx è½¬æ¢ä¸ºå¯¹åº”ä½çš„ bitmaskã€‚
+ * å‚æ•°ï¼šq_idx - æœ¬ç»„å†…é¢˜ç›®ä¸‹æ ‡ï¼ˆ0 èµ·ï¼‰
+ * è¿”å›ï¼šä»…ç¬¬ q_idx ä½ä¸º 1 çš„ uint16_t æ©ç 
  */
 uint16_t convert_group_mask(int q_idx)
 {
@@ -421,9 +430,9 @@ uint16_t convert_group_mask(int q_idx)
 }
 
 /*
- * Í³¼Æ bitmask ÖĞÖÃÎ»£¨Îª 1£©µÄÎ»Êı¡£
- * ²ÎÊı£ºmask - Î»ÑÚÂë
- * ·µ»Ø£ºÖÃÎ»ÊıÁ¿
+ * ç»Ÿè®¡ bitmask ä¸­ç½®ä½ï¼ˆä¸º 1ï¼‰çš„ä½æ•°ã€‚
+ * å‚æ•°ï¼šmask - ä½æ©ç 
+ * è¿”å›ï¼šç½®ä½æ•°é‡
  */
 int mask_count(uint16_t mask)
 {
@@ -433,9 +442,9 @@ int mask_count(uint16_t mask)
 }
 
 /*
- * ¸ù¾İ½×¶Î±àºÅ·µ»Ø¶ÔÓ¦Ìâ¿âÊı×éµÄÊ×µØÖ·¡£
- * ²ÎÊı£ºtype - ½×¶Î±àºÅ 0~4
- * ·µ»Ø£º¸Ã½×¶Î Question Êı×éÖ¸Õë£»·Ç·¨ type ·µ»Ø NULL
+ * æ ¹æ®é˜¶æ®µç¼–å·è¿”å›å¯¹åº”é¢˜åº“æ•°ç»„çš„é¦–åœ°å€ã€‚
+ * å‚æ•°ï¼štype - é˜¶æ®µç¼–å· 0~4
+ * è¿”å›ï¼šè¯¥é˜¶æ®µ Question æ•°ç»„æŒ‡é’ˆï¼›éæ³• type è¿”å› NULL
  */
 const Question* question_db_for_type(int type)
 {
@@ -449,18 +458,18 @@ const Question* question_db_for_type(int type)
     }
 }
 
-/* ===================== key ±àÂë ===================== */
-/* ÊôĞÔÉÏÏŞ PWCLA_MAX / HEALTH_MAX¡¢ÉÚ±ø NO_REMAIN_AIM_SCORE ¼û Adventure.h£»
- * ¹şÏ£±íµÄÕ¼ÓÃ±ê¼Ç KEY_IS_USED ¼û hash.h¡£ */
+/* ===================== key ç¼–ç  ===================== */
+/* å±æ€§ä¸Šé™ PWCLA_MAX / HEALTH_MAXã€å“¨å…µ NO_REMAIN_AIM_SCORE è§ Adventure.hï¼›
+ * å“ˆå¸Œè¡¨çš„å ç”¨æ ‡è®° KEY_IS_USED è§ hash.hã€‚ */
 
-/* °Ñ group_mask + ÊôĞÔ + done_cnt + r ´ò°ü³É uint64_t flat_key£»
- * health<=0 ·µ»Ø UINT64_MAX ´ú±íÎŞĞ§ËÀÍö×´Ì¬¡£
- * bit·ÖÅä£º[0-15]mask [16-19]health-1 [20-23]power [24-27]wisdom
+/* æŠŠ group_mask + å±æ€§ + done_cnt + r æ‰“åŒ…æˆ uint64_t flat_keyï¼›
+ * health<=0 è¿”å› UINT64_MAX ä»£è¡¨æ— æ•ˆæ­»äº¡çŠ¶æ€ã€‚
+ * bitåˆ†é…ï¼š[0-15]mask [16-19]health-1 [20-23]power [24-27]wisdom
  *          [28-31]charm [32-35]luck [36-39]agility [40-43]done [44-51]able_lost_s 
- *          [52-62]Î´Ê¹ÓÃ
- *          [63]±ØĞëÎª0£¬¹şÏ£Ê¹ÓÃ±ê¼Ç£¬¹şÏ£º¯ÊıÃ»ÓĞ¼ì²é£¬Çë±£Ö¤±ØĞëÎª0
- * ×¢Òâ£ºv2ÒÔÇ°°æ±¾µÄ[44-51]¶¨ÒåÎªr£¬¼´»¹ĞèÒªµÃµÄ·ÖÊı
- *       ÕâÀïµÄable_lost_sÎª»¹ÄÜ¶ªµÄ·ÖÊı£¨keyµÄ½á¹¹ÎŞĞèÕûÌå¸Ä¶¯£¬µ«ÕâÀïº¬Òå¸Ä±ä£©
+ *          [52-62]æœªä½¿ç”¨
+ *          [63]å¿…é¡»ä¸º0ï¼Œå“ˆå¸Œä½¿ç”¨æ ‡è®°ï¼Œå“ˆå¸Œå‡½æ•°æ²¡æœ‰æ£€æŸ¥ï¼Œè¯·ä¿è¯å¿…é¡»ä¸º0
+ * æ³¨æ„ï¼šv2ä»¥å‰ç‰ˆæœ¬çš„[44-51]å®šä¹‰ä¸ºrï¼Œå³è¿˜éœ€è¦å¾—çš„åˆ†æ•°
+ *       è¿™é‡Œçš„able_lost_sä¸ºè¿˜èƒ½ä¸¢çš„åˆ†æ•°ï¼ˆkeyçš„ç»“æ„æ— éœ€æ•´ä½“æ”¹åŠ¨ï¼Œä½†è¿™é‡Œå«ä¹‰æ”¹å˜ï¼‰
  */
 uint64_t encode_flat_key(uint16_t group_mask, const Attrs raw_attr,
                          uint8_t done_cnt, uint8_t remain_aim_score)
@@ -495,10 +504,9 @@ uint64_t encode_flat_key(uint16_t group_mask, const Attrs raw_attr,
     return key;
 }
 
-/* ===================== ¼ôÖ¦Óëµ¥²½ÆÀ¹À£¨ÎŞ¸±×÷ÓÃ£© ===================== */
-/* StateVec µÄ¶¨Òå¼û Adventure.h£¨dpCal.c ¹²ÓÃ£©¡£ */
+/* ===================== å‰ªæä¸å•æ­¥è¯„ä¼°ï¼ˆæ— å‰¯ä½œç”¨ï¼‰ ===================== */
 
-/* b ÊÇ·ñÅÁÀÛÍĞÖ§Åä a£¨b È«Î¬¶È >= a£© */
+/* b æ˜¯å¦å¸•ç´¯æ‰˜æ”¯é… aï¼ˆb å…¨ç»´åº¦ >= aï¼‰ */
 static inline bool pareto_dominates(const StateVec *b, const StateVec *a)
 {
     return (b->h >= a->h) && (b->p >= a->p) && (b->w >= a->w)
@@ -506,9 +514,9 @@ static inline bool pareto_dominates(const StateVec *b, const StateVec *a)
 }
 
 /*
- * ÆÀ¹Àµ¥¸öÑ¡Ïî£ºÅĞ¶¨³É¹¦/Ê§°Ü£¬¼ÆËã½áËãºóµÄÊôĞÔÓëµÃ·Ö±ê¼Ç¡£
- * ²ÎÊı£ºcur_attr - µ±Ç°ÊôĞÔ£»q - ÌâÄ¿Ö¸Õë£»opt_idx - Ñ¡ÏîÏÂ±ê 0~3
- * ·µ»Ø£º°üº¬½áËãºóÁùÎ¬ÊôĞÔÓëÊÇ·ñ³É¹¦±ê¼ÇµÄ StateVec
+ * è¯„ä¼°å•ä¸ªé€‰é¡¹ï¼šåˆ¤å®šæˆåŠŸ/å¤±è´¥ï¼Œè®¡ç®—ç»“ç®—åçš„å±æ€§ä¸å¾—åˆ†æ ‡è®°ã€‚
+ * å‚æ•°ï¼šcur_attr - å½“å‰å±æ€§ï¼›q - é¢˜ç›®æŒ‡é’ˆï¼›opt_idx - é€‰é¡¹ä¸‹æ ‡ 0~3
+ * è¿”å›ï¼šåŒ…å«ç»“ç®—åå…­ç»´å±æ€§ä¸æ˜¯å¦æˆåŠŸæ ‡è®°çš„ StateVec
  */
 static inline StateVec eval_option(const Attrs cur_attr, const Question *q, int opt_idx)
 {
@@ -526,7 +534,7 @@ static inline StateVec eval_option(const Attrs cur_attr, const Question *q, int 
     return res;
 }
 
-/* Ñ¡Ïî¼ôÖ¦£ºÉ¾µô±»Ö§Åä»ò±ØËÀÇÒ·Ç×îºóÌâµÄÑ¡Ïî¡£¸Ä¶¯ vecs/keep£¬ÎŞÍâ²¿¸±×÷ÓÃ */
+/* é€‰é¡¹å‰ªæï¼šåˆ æ‰è¢«æ”¯é…æˆ–å¿…æ­»ä¸”éæœ€åé¢˜çš„é€‰é¡¹ã€‚æ”¹åŠ¨ vecs/keepï¼Œæ— å¤–éƒ¨å‰¯ä½œç”¨ */
 void prune_options(const Question *q, const Attrs raw_attr,
                    int done_cnt, StateVec vecs[4], bool keep[4])
 {
@@ -555,138 +563,40 @@ void prune_options(const Question *q, const Attrs raw_attr,
     }
 }
 
-/* =====================================================================
- * DP ¼ÆËã±¾Ìå£¨dpMaxAverage / dpGoalProb£©ÒÑ²ğ·Öµ½ dpCal.c / dpCal.h¡£
- * ±¾ÎÄ¼şÖ»±£ÁôËüÃÇµÄµ÷ÓÃ·½Óë¹æÔò³£Á¿£¬²»ÔÙ°üº¬ DP ÊµÏÖ¡£
- * ===================================================================== */
-
- /* =======================   ´ÅÅÌ´òÓ¡   =============================== */
-#define CACHE_MAGIC     0x4D454D4FU  // Ğ£ÑéÂë
-
-/*
- * ´Ó´ÅÅÌÎÄ¼ş¼ÓÔØ DP »º´æµ½¹şÏ£±í¡£
- * Ğ£Ñé magic/version/role_id£¬ÈÎÒ»²»Æ¥Åä»òÊı¾İ²»ÍêÕûÔòÅĞ¶¨Ëğ»µ²¢·µ»Ø -1¡£
- * ²ÎÊı£ºpath - »º´æÎÄ¼şÂ·¾¶£»role_id - ½ÇÉ« ID£»h - Ä¿±ê¹şÏ£±í
- * ·µ»Ø£º0 ³É¹¦£»-1 Ê§°Ü£¨ÎÄ¼ş²»´æÔÚ/°æ±¾²»·û/Êı¾İËğ»µ£©
- */
-static int cache_load_file(const char *path, int role_id, MemoHash *h)
-{
-    FILE *fp = fopen(path, "rb");
-    if (!fp) return -1;
-
-    uint32_t magic, version, rid, cnt;
-    if (fread(&magic, 4, 1, fp) != 1 || magic != CACHE_MAGIC) { fclose(fp); return -1; }
-    if (fread(&version, 4, 1, fp) != 1 || version != GAME_VERSION) { fclose(fp); return -1; }
-    if (fread(&rid, 4, 1, fp) != 1 || rid != (uint32_t)role_id) { fclose(fp); return -1; }
-    if (fread(&cnt, 4, 1, fp) != 1) { fclose(fp); return -1; }
-
-    memo_hash_init_s(h, (size_t)cnt * 2, 1 << 20);
-    if (!h->table) { fclose(fp); return -1; }
-
-    for (uint32_t i = 0; i < cnt; i++) {
-        uint64_t key;
-        double val;
-        if (fread(&key, 8, 1, fp) != 1) break;
-        if (fread(&val, 8, 1, fp) != 1) break;
-        memo_hash_put(h, key & ~KEY_IS_USED, val, TRUE);
-    }
-    fclose(fp);
-
-    if (h->used_cnt != cnt) {   /* ¼ÓÔØ²»ÍêÕû£¬ÅĞ¶¨Ëğ»µ */
-        memo_hash_destroy(h);
-        return -1;
-    }
-    return 0;
-}
-
-/*
- * ½«¹şÏ£±íÖĞµÄ DP »º´æĞ´Èë´ÅÅÌÎÄ¼ş¡£
- * ²ÎÊı£ºpath - »º´æÎÄ¼şÂ·¾¶£»role_id - ½ÇÉ« ID£»h - Ô´¹şÏ£±í
- * ·µ»Ø£º0 ³É¹¦£»-1 ÎÄ¼ş´ò¿ªÊ§°Ü
- */
-static int cache_save_file(const char *path, int role_id, MemoHash *h)
-{
-    FILE *fp = fopen(path, "wb");
-    if (!fp) return -1;
-
-    uint32_t magic = CACHE_MAGIC;
-    uint32_t version = GAME_VERSION;
-    uint32_t rid = (uint32_t)role_id;
-    uint32_t cnt = (uint32_t)h->used_cnt;
-
-    fwrite(&magic, 4, 1, fp);
-    fwrite(&version, 4, 1, fp);
-    fwrite(&rid, 4, 1, fp);
-    fwrite(&cnt, 4, 1, fp);
-
-    for (size_t i = 0; i < h->capacity; i++) {
-        if (h->table[i].key) {
-            uint64_t tmp = h->table[i].key & ~KEY_IS_USED;
-            fwrite(&tmp, 8, 1, fp);
-            fwrite(&h->table[i].val, 8, 1, fp);
-        }
-    }
-    fclose(fp);
-    return 0;
-}
-
-/* ÆÚÍû·Ö»º´æ£ºinit_<role>_expect.cache */
-static int cache_load_expect(int role_id, MemoHash *h)
-{
-    char path[64];
-    snprintf(path, sizeof(path), "init_%d_expect.cache", role_id);
-    return cache_load_file(path, role_id, h);
-}
-
-/*
- * ±£´æÆÚÍû·Ö»º´æµ½ init_<role>_expect.cache¡£
- * ²ÎÊı£ºrole_id - ½ÇÉ« ID£»h - Ô´¹şÏ£±í
- * ·µ»Ø£º0 ³É¹¦£»-1 Ê§°Ü
- */
-static int cache_save_expect(int role_id, MemoHash *h)
-{
-    char path[64];
-    snprintf(path, sizeof(path), "init_%d_expect.cache", role_id);
-    return cache_save_file(path, role_id, h);
-}
-
-/* struct GameSnapshot ÒÑÒÆµ½ Adventure.h£¨JS ĞèÔÚ wasm ¶ÑÉÏÌî³äºó´«Èë£¬
- * ²»ÄÜÊÇ²»Í¸Ã÷ÀàĞÍ£©¡£ */
+// è½ç›˜åŠŸèƒ½ç§»é™¤
 
 /* =====================================================================
- * GameContext£ºÒ»¾ÖÓÎÏ·µÄÈ«²¿¿É±ä×´Ì¬
+ * GameContextï¼šä¸€å±€æ¸¸æˆçš„å…¨éƒ¨å¯å˜çŠ¶æ€
  *
- * ¡¾Î»ÖÃÔ¼Êø¡¤²»ÒªÉÏÒÆ¡¿³ÉÔ±ÒÀÀµ MemoHash Óë DebugStats£¨¾ùÒÑÔÚ
- * Adventure.h / hash.h ÖĞ¸ø³öÍêÕû¶¨Òå£©£¬ÇÒÍ·ÎÄ¼şÀï GameContext Ö»ÊÇ
- * ²»Í¸Ã÷ typedef£¬Òò´Ë±¾¶¨Òå±ØĞë³öÏÖÔÚ game_ctx_create_form /
- * game_ctx_create µÈËùÓĞÊ¹ÓÃµãÖ®Ç°¡£
+ * ã€ä½ç½®çº¦æŸÂ·ä¸è¦ä¸Šç§»ã€‘æˆå‘˜ä¾èµ– MemoHash ä¸ DebugStatsï¼ˆå‡å·²åœ¨
+ * Adventure.h / hash.h ä¸­ç»™å‡ºå®Œæ•´å®šä¹‰ï¼‰ï¼Œä¸”å¤´æ–‡ä»¶é‡Œ GameContext åªæ˜¯
+ * ä¸é€æ˜ typedefï¼Œå› æ­¤æœ¬å®šä¹‰å¿…é¡»å‡ºç°åœ¨ game_ctx_create_form /
+ * game_ctx_create ç­‰æ‰€æœ‰ä½¿ç”¨ç‚¹ä¹‹å‰ã€‚
  * ===================================================================== */
 struct GameContext {
     RoleId   role_id;
 
-    MemoHash memo_expect;   /* DP »º´æ£ºÆÚÍû×î´ó·ÖÊı memo ¹şÏ£±í */
-    int      expect_ready;  /* 1=ÆÚÍû·Ö¹şÏ£±íÒÑ³õÊ¼»¯¾ÍĞ÷ */
-    int      dirty_expect;  /* 1=ÓĞĞÂÔö½á¹û£¬Ïú»ÙÊ±ĞèÂäÅÌ */
+    MemoHash memo_expect;   /* DP ç¼“å­˜ï¼šæœŸæœ›æœ€å¤§åˆ†æ•° memo å“ˆå¸Œè¡¨ */
+    int      expect_ready;  /* 1=æœŸæœ›åˆ†å“ˆå¸Œè¡¨å·²åˆå§‹åŒ–å°±ç»ª */
+    int      dirty_expect;  /* 1=æœ‰æ–°å¢ç»“æœï¼Œé”€æ¯æ—¶éœ€è½ç›˜ */
 
-    MemoHash memo_prob;     /* DP »º´æ£º´ï³ÉÄ¿±ê T µÄ¸ÅÂÊ memo ¹şÏ£±í */
-    int      prob_ready;    /* 1=¸ÅÂÊ¹şÏ£±íÒÑ³õÊ¼»¯¾ÍĞ÷ */
-    // int      dirty_prob;    /* 1=ÓĞĞÂÔö½á¹û£¬Ïú»ÙÊ±ĞèÂäÅÌ */
+    MemoHash memo_prob;     /* DP ç¼“å­˜ï¼šè¾¾æˆç›®æ ‡ T çš„æ¦‚ç‡ memo å“ˆå¸Œè¡¨ */
+    int      prob_ready;    /* 1=æ¦‚ç‡å“ˆå¸Œè¡¨å·²åˆå§‹åŒ–å°±ç»ª */
 
-    MemoHash memo_proMax620;/* DP »º´æ£º³å´ÌÄ£Ê½´ï³ÉÄ¿±ê 620 µÄ¸ÅÂÊ memo ¹şÏ£±í */
-    int      proMax620_ready;/* 1=¸ÅÂÊ¹şÏ£±íÒÑ³õÊ¼»¯¾ÍĞ÷ */
+    MemoHash memo_proMax620;/* DP ç¼“å­˜ï¼šå†²åˆºæ¨¡å¼è¾¾æˆç›®æ ‡ 620 çš„æ¦‚ç‡ memo å“ˆå¸Œè¡¨ */
+    int      proMax620_ready;/* 1=æ¦‚ç‡å“ˆå¸Œè¡¨å·²åˆå§‹åŒ–å°±ç»ª */
 
-    MemoHash memo_proMax480;/* DP »º´æ£º³å´ÌÄ£Ê½´ï³ÉÄ¿±ê 480 µÄ¸ÅÂÊ memo ¹şÏ£±í */
-    int      proMax480_ready;/* 1=¸ÅÂÊ¹şÏ£±íÒÑ³õÊ¼»¯¾ÍĞ÷ */
+    MemoHash memo_proMax480;/* DP ç¼“å­˜ï¼šå†²åˆºæ¨¡å¼è¾¾æˆç›®æ ‡ 480 çš„æ¦‚ç‡ memo å“ˆå¸Œè¡¨ */
+    int      proMax480_ready;/* 1=æ¦‚ç‡å“ˆå¸Œè¡¨å·²åˆå§‹åŒ–å°±ç»ª */
 
     Attrs    cur_attr;
-    uint16_t group_mask;    /* ±¾×éÒÑÑ¡ÌâÄ¿ÑÚÂë£¨bit ±ê¼Ç£© */
-    int      done_cnt;      /* ÒÑÍê³ÉÌâÊı 0~10 */
-    int      total_score;   /* µ±Ç°ÀÛ¼Æ×ÜµÃ·Ö */
+    uint16_t group_mask;    /* æœ¬ç»„å·²é€‰é¢˜ç›®æ©ç ï¼ˆbit æ ‡è®°ï¼‰ */
+    int      done_cnt;      /* å·²å®Œæˆé¢˜æ•° 0~10 */
+    int      total_score;   /* å½“å‰ç´¯è®¡æ€»å¾—åˆ† */
     
     #ifdef DEBUG
-    DebugStats stats;       /* memo ÃüÖĞ / Î´ÃüÖĞ¼ÆÊı */
+    DebugStats stats;       /* memo å‘½ä¸­ / æœªå‘½ä¸­è®¡æ•° */
     #endif
-
 };
 
 static inline int clamp_pwcla(int val)
@@ -696,7 +606,33 @@ static inline int clamp_pwcla(int val)
     return val;
 }
 
-/* ============================ ¶ÔÍâ API ============================ */
+/* ============================ å¯¹å¤– API ============================ */
+/*
+ * å¯¹å¤– APIï¼šåˆå§‹åŒ–ï¼Œä¸åŠ è½½è¡¨
+ */
+GameContext *neural_ctx_init(RoleId role_id) {
+    if (role_id < ROLE_XIAO_TANG || role_id > ROLE_XIAO_ZHA)
+        return NULL;
+
+    GameContext *ctx = (GameContext *)calloc(1, sizeof(GameContext));
+    if (!ctx) return NULL;
+
+    ctx->role_id = role_id;
+    ctx->cur_attr = *game_role_init_attrs(role_id);
+    ctx->group_mask = 0;
+    ctx->done_cnt = 0;
+    ctx->total_score = 0;
+    ctx->memo_expect.table = NULL;
+    ctx->expect_ready = 0;
+    ctx->memo_prob.table = NULL;
+    ctx->prob_ready = 0;
+    ctx->memo_proMax480.table = NULL;
+    ctx->proMax480_ready = 0;
+    ctx->memo_proMax480.table = NULL;
+    ctx->proMax620_ready = 0;
+
+    return ctx;
+}
 
 GameContext *game_ctx_create_form(GameSnapshot *s)
 {
@@ -724,19 +660,13 @@ GameContext *game_ctx_create_form(GameSnapshot *s)
     ctx->done_cnt = s->done_cnt;
     ctx->total_score = s->score;
 
-    /* ³¢ÊÔ¼ÓÔØÆÚÍû»º´æ£»Ê§°ÜÔò¿ª¿Õ±í */
-    if (cache_load_expect(ctx->role_id, &ctx->memo_expect) == 0) {
+    /* å°è¯•åŠ è½½æœŸæœ›ç¼“å­˜ï¼›å¤±è´¥åˆ™å¼€ç©ºè¡¨ */
+   
+    if (memo_hash_init(&ctx->memo_expect, 1U << 20))
+        ctx->expect_ready = 0;
+    else
         ctx->expect_ready = 1;
-    }
-    else {
-        if (memo_hash_init(&ctx->memo_expect, 1U << 20))
-            ctx->expect_ready = 0;
-        else
-            ctx->expect_ready = 1;
-    }
 
-    /* ³¢ÊÔ¼ÓÔØ´ï±ê¸ÅÂÊ»º´æ£»Ê§°ÜÔò¿ª¿Õ±í */
-    // ¹¦ÄÜ¸üĞÂ£¬ÔİÊ±É¾³ıÎÄ¼ş¼ÓÔØ
     if (memo_hash_init(&ctx->memo_prob, 1U << 20))
         ctx->prob_ready = 0;
     else
@@ -756,16 +686,16 @@ GameContext *game_ctx_create_form(GameSnapshot *s)
 }
 
 /*
- * ¶ÔÍâ API£ºÔÚ¿ìÕÕ s Ëù¹ØÁªµÄ**ÒÑÓĞ** GameContext ÉÏÔ­µØ¸ÄĞ´µ±Ç°¾ÖÃæ¡£
- * ´¦ÀíÂß¼­Óë game_ctx_create_form ÍêÈ«Ò»ÖÂ£¨Í¬ÑùµÄºÏ·¨ĞÔĞ£Ñé¡¢Í¬ÑùµÄÊôĞÔ²Ã¼ô¡¢
- * Í¬ÑùµÄ group_mask / done_cnt / total_score Ğ´Èë£©£¬Çø±ğÔÚÓÚ£º
- *   - ²»ĞÂ½¨ GameContext£¬Òò´Ë²»ÖØĞÂ calloc Á½ÕÅ memo ¹şÏ£±í£¬Ò²²»ÖØĞÂ×ß
- *     ´ÅÅÌ»º´æ¼ÓÔØ£¬ÒÑÓĞµÄ DP ¼ÆËã½á¹ûÈ«²¿±£Áô¸´ÓÃ£»
- *   - **²»¸Ä¶¯ ctx->role_id**£¬¼´²»»á¸²Ğ´³É ROLE_USER_DEFINE£¬
- *     Ô­ÓĞ½ÇÉ«Éí·İ£¨º¬Æä»º´æ¹éÊô£©±£³Ö²»±ä¡£
- * ²ÎÊı£ºs - ¾ÖÃæ¿ìÕÕ£»ÆäÖĞ s->ctx ÎªÄ¿±êÉÏÏÂÎÄ£¬±ØĞë·Ç¿Õ
- * ·µ»Ø£º0 ³É¹¦£»-1 ²ÎÊı·Ç·¨£¨s Îª¿Õ / s->ctx Îª¿Õ / done_cnt>9 / score>100 /
- *      health<=0£©
+ * å¯¹å¤– APIï¼šåœ¨å¿«ç…§ s æ‰€å…³è”çš„**å·²æœ‰** GameContext ä¸ŠåŸåœ°æ”¹å†™å½“å‰å±€é¢ã€‚
+ * å¤„ç†é€»è¾‘ä¸ game_ctx_create_form å®Œå…¨ä¸€è‡´ï¼ˆåŒæ ·çš„åˆæ³•æ€§æ ¡éªŒã€åŒæ ·çš„å±æ€§è£å‰ªã€
+ * åŒæ ·çš„ group_mask / done_cnt / total_score å†™å…¥ï¼‰ï¼ŒåŒºåˆ«åœ¨äºï¼š
+ *   - ä¸æ–°å»º GameContextï¼Œå› æ­¤ä¸é‡æ–° calloc ä¸¤å¼  memo å“ˆå¸Œè¡¨ï¼Œä¹Ÿä¸é‡æ–°èµ°
+ *     ç£ç›˜ç¼“å­˜åŠ è½½ï¼Œå·²æœ‰çš„ DP è®¡ç®—ç»“æœå…¨éƒ¨ä¿ç•™å¤ç”¨ï¼›
+ *   - **ä¸æ”¹åŠ¨ ctx->role_id**ï¼Œå³ä¸ä¼šè¦†å†™æˆ ROLE_USER_DEFINEï¼Œ
+ *     åŸæœ‰è§’è‰²èº«ä»½ï¼ˆå«å…¶ç¼“å­˜å½’å±ï¼‰ä¿æŒä¸å˜ã€‚
+ * å‚æ•°ï¼šs - å±€é¢å¿«ç…§ï¼›å…¶ä¸­ s->ctx ä¸ºç›®æ ‡ä¸Šä¸‹æ–‡ï¼Œå¿…é¡»éç©º
+ * è¿”å›ï¼š0 æˆåŠŸï¼›-1 å‚æ•°éæ³•ï¼ˆs ä¸ºç©º / s->ctx ä¸ºç©º / done_cnt>9 / score>100 /
+ *      health<=0ï¼‰
  */
 int game_ctx_modify(GameSnapshot *s)
 {
@@ -777,7 +707,7 @@ int game_ctx_modify(GameSnapshot *s)
 
     GameContext *ctx = s->ctx;
 
-    /* ÊôĞÔĞ´Èë£ºÓë create_form Í¬Ò»Ì×²Ã¼ô¹æÔò */
+    /* å±æ€§å†™å…¥ï¼šä¸ create_form åŒä¸€å¥—è£å‰ªè§„åˆ™ */
     ctx->cur_attr.health  = (s->attrs.health > 8) ? 8 : s->attrs.health;
     ctx->cur_attr.power   = clamp_pwcla(s->attrs.power);
     ctx->cur_attr.wisdom  = clamp_pwcla(s->attrs.wisdom);
@@ -796,9 +726,9 @@ int game_ctx_modify(GameSnapshot *s)
 }
 
 /*
- * ¶ÔÍâ API£º·µ»ØÖ¸¶¨½ÇÉ«µÄ³õÊ¼ÊôĞÔ³£Á¿Ö¸Õë¡£
- * ²ÎÊı£ºrole_id - ½ÇÉ«Ã¶¾Ù ID
- * ·µ»Ø£º³õÊ¼ÊôĞÔÖ¸Õë£»·Ç·¨ role_id ·µ»Ø NULL
+ * å¯¹å¤– APIï¼šè¿”å›æŒ‡å®šè§’è‰²çš„åˆå§‹å±æ€§å¸¸é‡æŒ‡é’ˆã€‚
+ * å‚æ•°ï¼šrole_id - è§’è‰²æšä¸¾ ID
+ * è¿”å›ï¼šåˆå§‹å±æ€§æŒ‡é’ˆï¼›éæ³• role_id è¿”å› NULL
  */
 const Attrs* game_role_init_attrs(RoleId role_id)
 {
@@ -808,10 +738,10 @@ const Attrs* game_role_init_attrs(RoleId role_id)
 }
 
 /*
- * ¶ÔÍâ API£º´´½¨Ò»¾ÖÓÎÏ·µÄ GameContext£¬³õÊ¼»¯ÊôĞÔ¡¢¼Æ·ÖÓëÁ½ÕÅ memo »º´æ¡£
- * ÓÅÏÈ´Ó´ÅÅÌ¼ÓÔØÒÑÓĞ DP »º´æ£»¼ÓÔØÊ§°ÜÔò¿ª¿Õ±íµÈ´ıÔËĞĞÊ±Ìî³ä¡£
- * ²ÎÊı£ºrole_id - ½ÇÉ«Ã¶¾Ù ID
- * ·µ»Ø£ºĞÂ½¨µÄ GameContext Ö¸Õë£»²ÎÊı·Ç·¨»òÄÚ´æ²»×ã·µ»Ø NULL
+ * å¯¹å¤– APIï¼šåˆ›å»ºä¸€å±€æ¸¸æˆçš„ GameContextï¼Œåˆå§‹åŒ–å±æ€§ã€è®¡åˆ†ä¸ä¸¤å¼  memo ç¼“å­˜ã€‚
+ * ä¼˜å…ˆä»ç£ç›˜åŠ è½½å·²æœ‰ DP ç¼“å­˜ï¼›åŠ è½½å¤±è´¥åˆ™å¼€ç©ºè¡¨ç­‰å¾…è¿è¡Œæ—¶å¡«å……ã€‚
+ * å‚æ•°ï¼šrole_id - è§’è‰²æšä¸¾ ID
+ * è¿”å›ï¼šæ–°å»ºçš„ GameContext æŒ‡é’ˆï¼›å‚æ•°éæ³•æˆ–å†…å­˜ä¸è¶³è¿”å› NULL
  */
 GameContext* game_ctx_create(RoleId role_id)
 {
@@ -828,19 +758,14 @@ GameContext* game_ctx_create(RoleId role_id)
     ctx->total_score = 0;
 
     
-    /* ³¢ÊÔ¼ÓÔØÆÚÍû»º´æ£»Ê§°ÜÔò¿ª¿Õ±í */
-    if (cache_load_expect(role_id, &ctx->memo_expect) == 0) {
+    /* å°è¯•åŠ è½½æœŸæœ›ç¼“å­˜ï¼›å¤±è´¥åˆ™å¼€ç©ºè¡¨ */
+    if (memo_hash_init(&ctx->memo_expect, 1U << 20))
+        ctx->expect_ready = 0;
+    else
         ctx->expect_ready = 1;
-    }
-    else {
-        if (memo_hash_init(&ctx->memo_expect, 1U << 20))
-            ctx->expect_ready = 0;
-        else
-            ctx->expect_ready = 1;
-    }
 
-    /* ³¢ÊÔ¼ÓÔØ´ï±ê¸ÅÂÊ»º´æ£»Ê§°ÜÔò¿ª¿Õ±í */
-    // ¹¦ÄÜ¸üĞÂ£¬ÔİÊ±É¾³ıÎÄ¼ş¼ÓÔØ
+    /* å°è¯•åŠ è½½è¾¾æ ‡æ¦‚ç‡ç¼“å­˜ï¼›å¤±è´¥åˆ™å¼€ç©ºè¡¨ */
+    // åŠŸèƒ½æ›´æ–°ï¼Œæš‚æ—¶åˆ é™¤æ–‡ä»¶åŠ è½½
     if (memo_hash_init(&ctx->memo_prob, 1U << 20))
         ctx->prob_ready = 0;
     else
@@ -856,7 +781,7 @@ GameContext* game_ctx_create(RoleId role_id)
 }
 
 /*
- * ¶ÔÍâ API£ºÇåÀíµôËùÓĞ»º´æÊı¾İ£¬²¢ÖØĞÂ¼ÓÔØÄ£Ê½
+ * å¯¹å¤– APIï¼šæ¸…ç†æ‰æ‰€æœ‰ç¼“å­˜æ•°æ®ï¼Œå¹¶é‡æ–°åŠ è½½æ¨¡å¼
  */
 void change_game_ctx_mode(GameContext *ctx, bool n_exp_ready, bool n_prob_ready, bool n_480_ready, bool n_620_ready)
 {
@@ -867,16 +792,10 @@ void change_game_ctx_mode(GameContext *ctx, bool n_exp_ready, bool n_prob_ready,
 
     if (n_exp_ready)
     {
-        /* ³¢ÊÔ¼ÓÔØÆÚÍû»º´æ£»Ê§°ÜÔò¿ª¿Õ±í */
-        if (cache_load_expect(ctx->role_id, &ctx->memo_expect) == 0) {
+        if (memo_hash_init(&ctx->memo_expect, 1U << 20))
+            ctx->expect_ready = 0;
+        else
             ctx->expect_ready = 1;
-        }
-        else {
-            if (memo_hash_init(&ctx->memo_expect, 1U << 20))
-                ctx->expect_ready = 0;
-            else
-                ctx->expect_ready = 1;
-        }
     }
     if (n_prob_ready)
     {
@@ -925,18 +844,13 @@ GameContext *game_ctx_create_sprint_form(GameSnapshot *s)
 }
 
 /*
- * ¶ÔÍâ API£ºÏú»Ù GameContext£¬Èô»º´æÓĞ¸üĞÂÔòĞ´»Ø´ÅÅÌ£¬È»ºóÊÍ·ÅÄÚ´æ¡£
- * ²ÎÊı£ºctx - ÓÎÏ·ÉÏÏÂÎÄÖ¸Õë£¨¿ÉÎª NULL£©
+ * å¯¹å¤– APIï¼šé”€æ¯ GameContextï¼Œè‹¥ç¼“å­˜æœ‰æ›´æ–°åˆ™å†™å›ç£ç›˜ï¼Œç„¶åé‡Šæ”¾å†…å­˜ã€‚
+ * å‚æ•°ï¼šctx - æ¸¸æˆä¸Šä¸‹æ–‡æŒ‡é’ˆï¼ˆå¯ä¸º NULLï¼‰
  */
 void game_ctx_destroy(GameContext *ctx)
 {
     if (!ctx) return;
-
-    if (ctx->expect_ready && ctx->dirty_expect)
-        cache_save_expect(ctx->role_id, &ctx->memo_expect);
-    //if (ctx->prob_ready && ctx->dirty_prob)
-    //    cache_save_goal(ctx->role_id, &ctx->memo_prob);
-
+;
     if (ctx->expect_ready)    memo_hash_destroy(&ctx->memo_expect);
     if (ctx->prob_ready)      memo_hash_destroy(&ctx->memo_prob);
     if (ctx->proMax480_ready) memo_hash_destroy(&ctx->memo_proMax480);
@@ -947,41 +861,41 @@ void game_ctx_destroy(GameContext *ctx)
 }
 
 /*
- * ¶ÔÍâ API£º»ñÈ¡µ±Ç°½ÇÉ«ÊôĞÔ¡£
- * ²ÎÊı£ºctx - ÓÎÏ·ÉÏÏÂÎÄ
- * ·µ»Ø£ºµ±Ç°ÊôĞÔÖ¸Õë£»ctx Îª NULL ·µ»Ø NULL
+ * å¯¹å¤– APIï¼šè·å–å½“å‰è§’è‰²å±æ€§ã€‚
+ * å‚æ•°ï¼šctx - æ¸¸æˆä¸Šä¸‹æ–‡
+ * è¿”å›ï¼šå½“å‰å±æ€§æŒ‡é’ˆï¼›ctx ä¸º NULL è¿”å› NULL
  */
 const Attrs* game_ctx_get_attrs(const GameContext *ctx)
 {
     return ctx ? &ctx->cur_attr : NULL;
 }
 /*
- * ¶ÔÍâ API£º»ñÈ¡ÒÑÍê³ÉÌâÄ¿Êı¡£
- * ·µ»Ø£ºÒÑÍê³ÉÌâÊı£»ctx Îª NULL ·µ»Ø -1
+ * å¯¹å¤– APIï¼šè·å–å·²å®Œæˆé¢˜ç›®æ•°ã€‚
+ * è¿”å›ï¼šå·²å®Œæˆé¢˜æ•°ï¼›ctx ä¸º NULL è¿”å› -1
  */
 int game_ctx_get_done_cnt(const GameContext *ctx)
 {
     return ctx ? ctx->done_cnt : -1;
 }
 /*
- * ¶ÔÍâ API£º»ñÈ¡µ±Ç°ÀÛ¼Æ×Ü·Ö¡£
- * ·µ»Ø£º×ÜµÃ·Ö£»ctx Îª NULL ·µ»Ø -1
+ * å¯¹å¤– APIï¼šè·å–å½“å‰ç´¯è®¡æ€»åˆ†ã€‚
+ * è¿”å›ï¼šæ€»å¾—åˆ†ï¼›ctx ä¸º NULL è¿”å› -1
  */
 int game_ctx_get_total_score(const GameContext *ctx)
 {
     return ctx ? ctx->total_score : -1;
 }
 /*
- * ¶ÔÍâ API£º»ñÈ¡µ±Ç°Ëù´¦½×¶Î±àºÅ£¨0~4£©¡£
- * ·µ»Ø£º½×¶Î±àºÅ£»ctx Îª NULL »òÒÑ½áÊø·µ»Ø -1
+ * å¯¹å¤– APIï¼šè·å–å½“å‰æ‰€å¤„é˜¶æ®µç¼–å·ï¼ˆ0~4ï¼‰ã€‚
+ * è¿”å›ï¼šé˜¶æ®µç¼–å·ï¼›ctx ä¸º NULL æˆ–å·²ç»“æŸè¿”å› -1
  */
 int game_ctx_get_type(const GameContext *ctx)
 {
     return ctx ? judgeGroup(ctx->done_cnt) : -1;
 }
 /*
- * ¶ÔÍâ API£º»ñÈ¡µ±Ç°±¾×éÒÑÑ¡ÌâÎ»ÑÚÂë¡£
- * ·µ»Ø£ºgroup_mask£»ctx Îª NULL ·µ»Ø 0
+ * å¯¹å¤– APIï¼šè·å–å½“å‰æœ¬ç»„å·²é€‰é¢˜ä½æ©ç ã€‚
+ * è¿”å›ï¼šgroup_maskï¼›ctx ä¸º NULL è¿”å› 0
  */
 uint16_t game_ctx_get_mask(const GameContext *ctx)
 {
@@ -989,8 +903,8 @@ uint16_t game_ctx_get_mask(const GameContext *ctx)
 }
 
 /*
- * ¶ÔÍâ API£º»ñÈ¡µ±Ç°½×¶Î£¨ÌâĞÍ£©µÄÌâÄ¿×ÜÊı¡£
- * ·µ»Ø£ºÌâÄ¿×ÜÊı£»·Ç·¨×´Ì¬·µ»Ø -1
+ * å¯¹å¤– APIï¼šè·å–å½“å‰é˜¶æ®µï¼ˆé¢˜å‹ï¼‰çš„é¢˜ç›®æ€»æ•°ã€‚
+ * è¿”å›ï¼šé¢˜ç›®æ€»æ•°ï¼›éæ³•çŠ¶æ€è¿”å› -1
  */
 int game_ctx_type_total(const GameContext *ctx)
 {
@@ -999,8 +913,8 @@ int game_ctx_type_total(const GameContext *ctx)
     return (type < 0) ? -1 : totalQs[type];
 }
 /*
- * ¶ÔÍâ API£º»ñÈ¡µ±Ç°½×¶ÎĞèÒªÑ¡¶¨µÄÌâÄ¿Êı£¨needPick£©¡£
- * ·µ»Ø£ºĞèÑ¡ÌâÊı£»·Ç·¨×´Ì¬·µ»Ø -1
+ * å¯¹å¤– APIï¼šè·å–å½“å‰é˜¶æ®µéœ€è¦é€‰å®šçš„é¢˜ç›®æ•°ï¼ˆneedPickï¼‰ã€‚
+ * è¿”å›ï¼šéœ€é€‰é¢˜æ•°ï¼›éæ³•çŠ¶æ€è¿”å› -1
  */
 int game_ctx_type_need(const GameContext *ctx)
 {
@@ -1009,9 +923,9 @@ int game_ctx_type_need(const GameContext *ctx)
     return (type < 0) ? -1 : needPick[type];
 }
 /*
- * ¶ÔÍâ API£ºÅĞ¶Ï±¾×éµÚ q_idx ÌâÊÇ·ñÉĞÎ´±»Ñ¡¡¢µ±Ç°¿ÉÑ¡¡£
- * ²ÎÊı£ºq_idx - ±¾×éÄÚÌâÄ¿ÏÂ±ê
- * ·µ»Ø£º1 ¿ÉÑ¡£»0 ÒÑÑ¡¹ı»ò²ÎÊı·Ç·¨
+ * å¯¹å¤– APIï¼šåˆ¤æ–­æœ¬ç»„ç¬¬ q_idx é¢˜æ˜¯å¦å°šæœªè¢«é€‰ã€å½“å‰å¯é€‰ã€‚
+ * å‚æ•°ï¼šq_idx - æœ¬ç»„å†…é¢˜ç›®ä¸‹æ ‡
+ * è¿”å›ï¼š1 å¯é€‰ï¼›0 å·²é€‰è¿‡æˆ–å‚æ•°éæ³•
  */
 int game_ctx_type_available(const GameContext *ctx, int q_idx)
 {
@@ -1021,8 +935,8 @@ int game_ctx_type_available(const GameContext *ctx, int q_idx)
     return (ctx->group_mask & convert_group_mask(q_idx)) ? 0 : 1;
 }
 /*
- * ¶ÔÍâ API£º»ñÈ¡±¾×éµÚ q_idx ÌâµÄÌâÄ¿ ID£¨101/201/.../505£©¡£
- * ·µ»Ø£ºÌâÄ¿ ID£»·Ç·¨ÏÂ±ê·µ»Ø -1
+ * å¯¹å¤– APIï¼šè·å–æœ¬ç»„ç¬¬ q_idx é¢˜çš„é¢˜ç›® IDï¼ˆ101/201/.../505ï¼‰ã€‚
+ * è¿”å›ï¼šé¢˜ç›® IDï¼›éæ³•ä¸‹æ ‡è¿”å› -1
  */
 int game_ctx_type_question_id(const GameContext *ctx, int q_idx)
 {
@@ -1032,9 +946,9 @@ int game_ctx_type_question_id(const GameContext *ctx, int q_idx)
     return (int)question_db_for_type(type)[q_idx].id;
 }
 /*
- * ¶ÔÍâ API£º¶ÁÈ¡Ä³ÌâÄ³Ñ¡ÏîµÄÅĞ¶¨ÃÅ¼÷¡¢³É¹¦½±ÀøÓëÊ§°Ü³Í·££¬Ğ´Èë out¡£
- * ²ÎÊı£ºq_idx - ÌâÄ¿ÏÂ±ê£»opt - Ñ¡ÏîÏÂ±ê 0~3£»out - Êä³ö OptionInfo
- * ·µ»Ø£º0 ³É¹¦£»-1 ²ÎÊı·Ç·¨
+ * å¯¹å¤– APIï¼šè¯»å–æŸé¢˜æŸé€‰é¡¹çš„åˆ¤å®šé—¨æ§›ã€æˆåŠŸå¥–åŠ±ä¸å¤±è´¥æƒ©ç½šï¼Œå†™å…¥ outã€‚
+ * å‚æ•°ï¼šq_idx - é¢˜ç›®ä¸‹æ ‡ï¼›opt - é€‰é¡¹ä¸‹æ ‡ 0~3ï¼›out - è¾“å‡º OptionInfo
+ * è¿”å›ï¼š0 æˆåŠŸï¼›-1 å‚æ•°éæ³•
  */
 int game_ctx_type_option(const GameContext *ctx, int q_idx, int opt, OptionInfo *out)
 {
@@ -1049,9 +963,9 @@ int game_ctx_type_option(const GameContext *ctx, int q_idx, int opt, OptionInfo 
 }
 
 /*
- * ¶ÔÍâ API£ºÖ´ĞĞÒ»²½ÓÎÏ·¡ª¡ªÅĞ¶¨Ñ¡Ïî³É°Ü¡¢½áËãÊôĞÔÓëµÃ·Ö£¬ÍÆ½øÉÏÏÂÎÄ¡£
- * ²ÎÊı£ºq_idx - Ñ¡¶¨ÌâÄ¿ÏÂ±ê£»opt - Ñ¡¶¨Ñ¡Ïî 0~3£»out - Êä³ö±¾²½½á¹û
- * ·µ»Ø£º0 ³É¹¦£»-1 ²ÎÊı·Ç·¨»òÌâÄ¿ÒÑÑ¡¹ı
+ * å¯¹å¤– APIï¼šæ‰§è¡Œä¸€æ­¥æ¸¸æˆâ€”â€”åˆ¤å®šé€‰é¡¹æˆè´¥ã€ç»“ç®—å±æ€§ä¸å¾—åˆ†ï¼Œæ¨è¿›ä¸Šä¸‹æ–‡ã€‚
+ * å‚æ•°ï¼šq_idx - é€‰å®šé¢˜ç›®ä¸‹æ ‡ï¼›opt - é€‰å®šé€‰é¡¹ 0~3ï¼›out - è¾“å‡ºæœ¬æ­¥ç»“æœ
+ * è¿”å›ï¼š0 æˆåŠŸï¼›-1 å‚æ•°éæ³•æˆ–é¢˜ç›®å·²é€‰è¿‡
  */
 int game_do_step(GameContext *ctx, int q_idx, int opt, StepResult *out)
 {
@@ -1059,7 +973,7 @@ int game_do_step(GameContext *ctx, int q_idx, int opt, StepResult *out)
     int type = judgeGroup(ctx->done_cnt);
     if (type < 0 || q_idx >= totalQs[type]) return -1;
     uint16_t q_bit = convert_group_mask(q_idx);
-    if (ctx->group_mask & q_bit) return -1;   /* ÒÑÑ¡¹ı */
+    if (ctx->group_mask & q_bit) return -1;   /* å·²é€‰è¿‡ */
 
     const Option *o = &question_db_for_type(type)[q_idx].options[opt];
     int ok = isSuccess(ctx->cur_attr, o->successAttrs);
@@ -1070,7 +984,7 @@ int game_do_step(GameContext *ctx, int q_idx, int opt, StepResult *out)
     out->add_score = add_score;
     out->new_attr = new_attr;
 
-    /* ÍÆ½øÉÏÏÂÎÄ */
+    /* æ¨è¿›ä¸Šä¸‹æ–‡ */
     ctx->cur_attr = new_attr;
     ctx->total_score += add_score;
     ctx->done_cnt += 1;
@@ -1081,12 +995,12 @@ int game_do_step(GameContext *ctx, int q_idx, int opt, StepResult *out)
 }
 
 /*
- * ¶ÔÍâ API£º¶ÔÄ³ÌâµÄ 4 ¸öÑ¡ÏîÖğÒ»×ö DP ÆÀ¹À¡£
- * Ã¿¸öÑ¡ÏîÊä³ö£ºÆÚÍûÊ£Óà×Ü·Ö expect_remain£»
- *               Èô target_T>0 ÇÒ»º´æ¾ÍĞ÷£¬Í¬Ê±Êä³ö´ï±ê¸ÅÂÊ prob_goal¡£
- * ²ÎÊı£ºq_idx - ÌâÄ¿ÏÂ±ê£»target_T - Ä¿±ê×Ü·Ö£¨0 ±íÊ¾²»¼ÆËã¸ÅÂÊ£©£»
- *       out - Êä³ö 4 ¸öÑ¡ÏîµÄÆÀ¹À½á¹ûÊı×é
- * ·µ»Ø£º0 ³É¹¦£»-1 ²ÎÊı·Ç·¨
+ * å¯¹å¤– APIï¼šå¯¹æŸé¢˜çš„ 4 ä¸ªé€‰é¡¹é€ä¸€åš DP è¯„ä¼°ã€‚
+ * æ¯ä¸ªé€‰é¡¹è¾“å‡ºï¼šæœŸæœ›å‰©ä½™æ€»åˆ† expect_remainï¼›
+ *               è‹¥ target_T>0 ä¸”ç¼“å­˜å°±ç»ªï¼ŒåŒæ—¶è¾“å‡ºè¾¾æ ‡æ¦‚ç‡ prob_goalã€‚
+ * å‚æ•°ï¼šq_idx - é¢˜ç›®ä¸‹æ ‡ï¼›target_T - ç›®æ ‡æ€»åˆ†ï¼ˆ0 è¡¨ç¤ºä¸è®¡ç®—æ¦‚ç‡ï¼‰ï¼›
+ *       out - è¾“å‡º 4 ä¸ªé€‰é¡¹çš„è¯„ä¼°ç»“æœæ•°ç»„
+ * è¿”å›ï¼š0 æˆåŠŸï¼›-1 å‚æ•°éæ³•
  */
 int game_evaluate_options(GameContext *ctx, int q_idx, int target_T, OptionEval out[4])
 {
@@ -1144,23 +1058,23 @@ int game_evaluate_options_sprint(GameContext *ctx, int q_idx,
 
     static const int cumScore[11] = { 0, 6, 12, 18, 27, 36, 45, 57, 69, 81, 100 };
     int has_lost = 100 * completed_rounds + cumScore[ctx->done_cnt]
-        - total_score - ctx->total_score; // ×î´óµÃ·Ö - µ±Ç°µÃ·Ö = ¿É¶ª·Ö
+        - total_score - ctx->total_score; // æœ€å¤§å¾—åˆ† - å½“å‰å¾—åˆ† = å¯ä¸¢åˆ†
     int able_lost_620 = 80 - has_lost;
     int able_lost_480 = 220 - has_lost;
     /* -----------------------------------------------------------------
-     * TODO(ÄÚºË)£º
-     *   - ÓÃ ctx µÄ¾ÖÄÚ½ø¶È£¨done_cnt / score / attrs£©ÕÛËãµ±Ç°Ê£Óà
-     *     "¿É¶ª·ÖÔ¤Ëã"£¬µÈ¼ÛÓÚ°Ñ dpGlobalProMax µÄ able_lost_s »¹Ô­³öÀ´£»
-     *   - target == 620 -> ÒÔ win_rates80  Îª¿ç¾Ö±ß½ç×öÒ»±éÑ¡Ïî DP£»
-     *     target == 480 -> ÒÔ win_rates220 Îª¿ç¾Ö±ß½ç×öÒ»±éÑ¡Ïî DP£»
-     *     target == 0   -> ×ßÏÖÓĞ game_evaluate_options(ctx, q_idx, 0, out4)£»
-     *   - out4[i].expect_remain ÓïÒå²»±ä£¨±¾¾ÖÊ£ÓàÆÚÍûµÃ·Ö£©£»
-     *     out4[i].prob_goal     = Ñ¡Ôñ¸ÃÑ¡Ïîºó"×îÖÕ´ï±ê target"µÄ¸ÅÂÊ¡£
+     * TODO(å†…æ ¸)ï¼š
+     *   - ç”¨ ctx çš„å±€å†…è¿›åº¦ï¼ˆdone_cnt / score / attrsï¼‰æŠ˜ç®—å½“å‰å‰©ä½™
+     *     "å¯ä¸¢åˆ†é¢„ç®—"ï¼Œç­‰ä»·äºæŠŠ dpGlobalProMax çš„ able_lost_s è¿˜åŸå‡ºæ¥ï¼›
+     *   - target == 620 -> ä»¥ win_rates80  ä¸ºè·¨å±€è¾¹ç•Œåšä¸€éé€‰é¡¹ DPï¼›
+     *     target == 480 -> ä»¥ win_rates220 ä¸ºè·¨å±€è¾¹ç•Œåšä¸€éé€‰é¡¹ DPï¼›
+     *     target == 0   -> èµ°ç°æœ‰ game_evaluate_options(ctx, q_idx, 0, out4)ï¼›
+     *   - out4[i].expect_remain è¯­ä¹‰ä¸å˜ï¼ˆæœ¬å±€å‰©ä½™æœŸæœ›å¾—åˆ†ï¼‰ï¼›
+     *     out4[i].prob_goal     = é€‰æ‹©è¯¥é€‰é¡¹å"æœ€ç»ˆè¾¾æ ‡ target"çš„æ¦‚ç‡ã€‚
      * ---------------------------------------------------------------- */
 
      // typedef struct {
-     //     double expect_remain; /* Ñ¡¸ÃÑ¡ÏîºóµÄ"Ê£ÓàÆÚÍûµÃ·Ö" */
-     //     double prob_goal;     /* Ñ¡¸ÃÑ¡ÏîºóµÄ"´ïµ½Ä¿±ê T µÄ¸ÅÂÊ"£¬Î´ÆôÓÃÊ±Îª -1 */
+     //     double expect_remain; /* é€‰è¯¥é€‰é¡¹åçš„"å‰©ä½™æœŸæœ›å¾—åˆ†" */
+     //     double prob_goal;     /* é€‰è¯¥é€‰é¡¹åçš„"è¾¾åˆ°ç›®æ ‡ T çš„æ¦‚ç‡"ï¼Œæœªå¯ç”¨æ—¶ä¸º -1 */
      // } OptionEval;
     const Question *q = &question_db_for_type(type)[q_idx];
     int needpick = needPick[type];
@@ -1176,7 +1090,7 @@ int game_evaluate_options_sprint(GameContext *ctx, int q_idx,
         int new_done = ctx->done_cnt + 1;
         uint16_t new_mask = (mask_count(ctx->group_mask) + 1 == needpick) ? 0 : (ctx->group_mask | q_bit);
 
-        if (ctx->expect_ready) // ×¢ÒâÎ´¿ªÆôÆÚÍû¼ÆËã£¬µ÷ÓÃdpMaxAverage»á½âÒıÓÃ¿ÕµÄ¹şÏ£±í£¬Ôö¼Ó·ÀÓù
+        if (ctx->expect_ready) // æ³¨æ„æœªå¼€å¯æœŸæœ›è®¡ç®—ï¼Œè°ƒç”¨dpMaxAverageä¼šè§£å¼•ç”¨ç©ºçš„å“ˆå¸Œè¡¨ï¼Œå¢åŠ é˜²å¾¡
         {
             out4[opt].expect_remain = delta +
                 dpMaxAverage(&ctx->memo_expect, new_mask, new_attr, new_done);
@@ -1204,12 +1118,10 @@ int game_evaluate_options_sprint(GameContext *ctx, int q_idx,
     return 0;
 }
 
-
-
 /*
- * ¶ÔÍâ API£º²éÑ¯´Óµ±Ç°×´Ì¬³ö·¢µÄÆÚÍûÊ£Óà×Ü·Ö¡£
- * ÏÈ²é»º´æ£¬Î´ÃüÖĞÔòµ÷ÓÃ dpMaxAverage ¼ÆËã²¢±ê¼Ç»º´æÎªÔà¡£
- * ·µ»Ø£ºÆÚÍûÊ£Óà·Ö£»»º´æÎ´¾ÍĞ÷·µ»Ø -1.0
+ * å¯¹å¤– APIï¼šæŸ¥è¯¢ä»å½“å‰çŠ¶æ€å‡ºå‘çš„æœŸæœ›å‰©ä½™æ€»åˆ†ã€‚
+ * å…ˆæŸ¥ç¼“å­˜ï¼Œæœªå‘½ä¸­åˆ™è°ƒç”¨ dpMaxAverage è®¡ç®—å¹¶æ ‡è®°ç¼“å­˜ä¸ºè„ã€‚
+ * è¿”å›ï¼šæœŸæœ›å‰©ä½™åˆ†ï¼›ç¼“å­˜æœªå°±ç»ªè¿”å› -1.0
  */
 double game_query_expect(GameContext *ctx)
 {
@@ -1226,10 +1138,10 @@ double game_query_expect(GameContext *ctx)
 }
 
 /*
- * ¶ÔÍâ API£º²éÑ¯´Óµ±Ç°×´Ì¬³ö·¢£¬×îÖÕ×Ü·Ö >= T µÄ¸ÅÂÊ¡£
- * ÏÈ²é»º´æ£¬Î´ÃüÖĞÔòµ÷ÓÃ dpGoalProb ¼ÆËã²¢±ê¼Ç»º´æÎªÔà¡£
- * ²ÎÊı£ºT - Ä¿±ê×Ü·Ö
- * ·µ»Ø£º´ï±ê¸ÅÂÊ£»»º´æÎ´¾ÍĞ÷·µ»Ø -1.0
+ * å¯¹å¤– APIï¼šæŸ¥è¯¢ä»å½“å‰çŠ¶æ€å‡ºå‘ï¼Œæœ€ç»ˆæ€»åˆ† >= T çš„æ¦‚ç‡ã€‚
+ * å…ˆæŸ¥ç¼“å­˜ï¼Œæœªå‘½ä¸­åˆ™è°ƒç”¨ dpGoalProb è®¡ç®—å¹¶æ ‡è®°ç¼“å­˜ä¸ºè„ã€‚
+ * å‚æ•°ï¼šT - ç›®æ ‡æ€»åˆ†
+ * è¿”å›ï¼šè¾¾æ ‡æ¦‚ç‡ï¼›ç¼“å­˜æœªå°±ç»ªè¿”å› -1.0
  */
 double game_query_goal_prob(GameContext *ctx, int T)
 {
@@ -1249,10 +1161,10 @@ double game_query_goal_prob(GameContext *ctx, int T)
 
 #ifdef DEBUG
 /*
- * ¶ÔÍâ API£º»ñÈ¡ memo »º´æÃüÖĞ / Î´ÃüÖĞ¼ÆÊı¡£
- * Ö»Í³¼ÆÒÑ±» memo »º´æµÄ DP ×ÓÎÊÌâ£¨mask, attr, done_cnt, r£©£»
- * ÃüÖĞ¼ÆÊıÓÉ dpCal.c Ö±½ÓĞ´Èë ctx->stats£¬¶ÁÈ¡Ê±Óëµ±Ç°×´Ì¬ÎŞ¹Ø¡£
- * ·µ»Ø£ºDebugStats Ö»¶ÁÖ¸Õë£»ctx Îª NULL ·µ»Ø NULL
+ * å¯¹å¤– APIï¼šè·å– memo ç¼“å­˜å‘½ä¸­ / æœªå‘½ä¸­è®¡æ•°ã€‚
+ * åªç»Ÿè®¡å·²è¢« memo ç¼“å­˜çš„ DP å­é—®é¢˜ï¼ˆmask, attr, done_cnt, rï¼‰ï¼›
+ * å‘½ä¸­è®¡æ•°ç”± dpCal.c ç›´æ¥å†™å…¥ ctx->statsï¼Œè¯»å–æ—¶ä¸å½“å‰çŠ¶æ€æ— å…³ã€‚
+ * è¿”å›ï¼šDebugStats åªè¯»æŒ‡é’ˆï¼›ctx ä¸º NULL è¿”å› NULL
  */
 const DebugStats* game_ctx_get_stats(const GameContext *ctx)
 {
@@ -1262,9 +1174,9 @@ const DebugStats* game_ctx_get_stats(const GameContext *ctx)
 #endif
 
 /*
- * ¶ÔÍâ API£º¸ù¾İÌâÄ¿ ID ÔÚµ±Ç°½×¶ÎÌâ¿âÖĞ·´²é±¾×éÄÚÏÂ±ê¡£
- * ²ÎÊı£ºquestion_id - ÌâÄ¿ ID£¨Èç 201¡¢305£©
- * ·µ»Ø£º±¾×éÏÂ±ê£»Î´ÕÒµ½·µ»Ø -1
+ * å¯¹å¤– APIï¼šæ ¹æ®é¢˜ç›® ID åœ¨å½“å‰é˜¶æ®µé¢˜åº“ä¸­åæŸ¥æœ¬ç»„å†…ä¸‹æ ‡ã€‚
+ * å‚æ•°ï¼šquestion_id - é¢˜ç›® IDï¼ˆå¦‚ 201ã€305ï¼‰
+ * è¿”å›ï¼šæœ¬ç»„ä¸‹æ ‡ï¼›æœªæ‰¾åˆ°è¿”å› -1
  */
 int game_ctx_find_qidx_by_id(const GameContext *ctx, int question_id)
 {

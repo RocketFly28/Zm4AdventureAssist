@@ -11,35 +11,36 @@
 
 # 2) 放行仓库根目录的说明文件
 # 注意：这里必须写前导 `/` 锚定到根目录。若写成 `!README.md`，
-# Git 会把任意子目录下的同名文件也放行（如 ConsoleApplication1/README.md）。
+# Git 会把任意子目录下的同名文件也放行。
 !/README.md
 !/.gitignore
 !/.gitattributes
 !/LICENSE
 
-# 3) 放行内核源文件
-!common.h
-!Adventure.h
-!Adventure.c
-!dpCal.h
-!dpCal.c
-!hash.h
-!hash.c
-!wasm_api.h
-!wasm_api.c
+# 3) 放行源码树（按目录逐个放行，新增文件记得加）
+!/Makefile
+!/src/main.c
+!/src/dpsolver/*.c
+!/src/dpsolver/*.h
+!/src/cli/*.c
+!/src/cli/*.h
+!/src/net/*.c
+!/src/net/*.h
+!/src/net/weight/*.h
+!/src/wasm/*.c
+!/src/wasm/*.h
 
-# 4) 放行命令行前端（原生构建的入口与交互）
-!cli.h
-!cli.c
-!main.c
-
-# 5) 放行原生构建脚本，以及发布用的可执行文件
-# Makefile 没有斜杠，可以匹配任意层级；但含斜杠的规则会被锚定到仓库根目录，
-# 所以 exe 必须写全路径，否则永远匹配不上（precal 版不发布，继续忽略）。
-!Makefile
-!ConsoleApplication1/bin/adventure.exe
+# 4) 放行发布用的可执行文件
+# 含斜杠的规则会被锚定到仓库根目录，所以 exe 必须写全路径；
+# precal 版不发布，继续忽略。
+!/bin/adventure.exe
 
 # ------------------------------------------------------------
-# 以后需要新增文件时，照着上面的格式加一行 `!文件名` 即可。
-# 例：想连打好的概率表一起提交 → 加一行 `!winRate*.txt`
+# 明确不要提交的东西（本机环境，换台机器重建即可）：
+#   .vs/  x64/  *.sln  *.vcxproj*       Visual Studio 工程与中间目录
+#   build/                              make 的中间产物
+#   *.cache                             DP 记忆化落盘缓存
+#   winRate*.txt                        打表结果（应当粘进 dpCal.c）
+#   patch_wx_glue.py                    小程序胶水适配脚本（宿主环境）
+# 以上都被第 1 条的 `*` 覆盖，无需逐条写。
 # ------------------------------------------------------------

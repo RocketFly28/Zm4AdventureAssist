@@ -1,15 +1,15 @@
-/*
+﻿/*
  * main.c - process entry point.
  *
  * All real work lives in cli.c. This file exists so that the kernel can be
  * built as a library (no main) simply by leaving main.c out of the file list,
  * or by building with -DWASM.
  */
-#include "common.h"
+#include "./dpsolver/common.h"
 
 #ifdef CONSOLE
 
-#include "cli.h"
+#include "./cli/cli.h"
 
 int main(int argc, char **argv)
 {

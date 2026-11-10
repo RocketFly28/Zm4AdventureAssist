@@ -1,8 +1,9 @@
-#include "common.h"
+﻿#include "../dpsolver/common.h"
 
 #ifdef WASM
 #include <emscripten.h>
-#include "Adventure.h"
+#include "../dpsolver/Adventure.h"
+#include "../net/net_api.h"
 #include "wasm_api.h"
 
 // 包装创建一局游戏
@@ -119,6 +120,13 @@ int wasm_game_do_step(GameContext *ctx, int q_idx, int opt, StepResult *out_res)
 {
     if (!ctx || !out_res) return -1;
     return game_do_step(ctx, q_idx, opt, out_res);
+}
+
+EMSCRIPTEN_KEEPALIVE
+int wasm_game_evaluate_flash(GameContext *ctx, int q_idx, int target_T, OptionEval *out4) // 注意语义有变化
+{
+    if (!ctx || !out4) return -1;
+    return flash_evaluate_options(ctx, q_idx, target_T, out4);
 }
 
 /* =======================================================================

@@ -1,4 +1,4 @@
-#include "hash.h"
+﻿#include "hash.h"
 
 #include <stdio.h>
 
@@ -94,8 +94,6 @@ static int cmp_hash(const void *a, const void *b)
  * 将哈希表压缩，蒸馏主要成分。
  * 压缩失败则不做处理，保留原表。
  * 参数：h - 哈希表指针
- * 注意：蒸馏没什么作用，内存上限后DP该卡死还是卡死。
- * 所以最好不要调用memo_hash_init_s
  */
 void memo_hash_compress(MemoHash *h)
 {

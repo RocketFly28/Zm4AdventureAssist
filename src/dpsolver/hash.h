@@ -1,4 +1,4 @@
-#ifndef MEMO_HASH_H
+﻿#ifndef MEMO_HASH_H
 #define MEMO_HASH_H
 
 #include "common.h"

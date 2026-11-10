@@ -7,10 +7,18 @@
 #   mingw32-make clean        remove build/
 #   mingw32-make distclean    remove build/ and bin/
 #
-# Layout
-#   build/release/*.o   object files + auto generated .d dependency files
+# Layout (source tree)
+#   src/main.c              process entry point
+#   src/dpsolver/           DP kernel + game model + memo hash
+#   src/cli/                console front end, guide table
+#   src/net/                flash mode: Transformer inference
+#   src/net/weight/         exported PyTorch weights (weights.h, ~6 MB)
+#   src/wasm/               Emscripten export layer, not part of the native build
+#
+# Build artifacts
+#   build/release/*.o       object files + auto generated .d dependency files
 #   build/precal/*.o
-#   bin/                final executables
+#   bin/                    final executables
 #
 # Notes
 #   * The recipes are POSIX shell syntax, so run make from Git Bash / MSYS2
@@ -46,7 +54,11 @@ OMP     ?= -fopenmp
 # -Wno-missing-braces: the two pasted win-rate tables are written as flat rows,
 # which GCC flags even though the layout is exactly what we want.
 WARN := -Wall -Wextra -Wno-unused-parameter -Wno-sign-compare -Wno-missing-braces
-BASE := -std=gnu11 -fcommon -I. $(WARN) $(OPT) $(if $(NATIVE),-march=native,)
+
+SRCDIR := src
+INCS   := -I$(SRCDIR)/dpsolver -I$(SRCDIR)/net -I$(SRCDIR)/cli
+
+BASE := -std=gnu11 -fcommon $(INCS) $(WARN) $(OPT) $(if $(NATIVE),-march=native,)
 
 REL_CFLAGS  := $(BASE) -DNDEBUG $(OMP)
 CAL_CFLAGS  := $(BASE) -DPRE_CAL $(OMP)
@@ -66,10 +78,18 @@ ifeq ($(OS),Windows_NT)
 endif
 
 # ---------------------------------------------------------------- files
-KERNEL := Adventure.c dpCal.c hash.c
-FRONT  := cli.c main.c
+KERNEL := $(SRCDIR)/dpsolver/Adventure.c \
+          $(SRCDIR)/dpsolver/dpCal.c \
+          $(SRCDIR)/dpsolver/hash.c \
+          $(SRCDIR)/net/net.c \
+          $(SRCDIR)/net/net_api.c
+FRONT  := $(SRCDIR)/cli/cli.c $(SRCDIR)/main.c
 SRCS   := $(KERNEL) $(FRONT)
-HDRS   := common.h Adventure.h dpCal.h hash.h cli.h
+
+# Any header change rebuilds everything. The dependency files generated with
+# -MMD would handle this as well, but the explicit list also covers the very
+# first build, before any .d file exists.
+HDRS   := $(wildcard $(SRCDIR)/*/*.h $(SRCDIR)/*/*/*.h $(SRCDIR)/*.h)
 
 BUILD  := build
 BINDIR := bin
@@ -94,15 +114,17 @@ $(CAL_BIN): $(CAL_OBJS) | $(BINDIR)
 	@echo "  LD    $@"
 	@$(CC) $(CAL_OBJS) -o $@ $(LDFLAGS) $(LDLIBS)
 
-$(BUILD)/release/%.o: %.c $(HDRS) | $(BUILD)/release
+$(BUILD)/release/%.o: %.c $(HDRS)
+	@mkdir -p $(dir $@)
 	@echo "  CC    $<"
 	@$(CC) $(REL_CFLAGS) -MMD -MP -c $< -o $@
 
-$(BUILD)/precal/%.o: %.c $(HDRS) | $(BUILD)/precal
+$(BUILD)/precal/%.o: %.c $(HDRS)
+	@mkdir -p $(dir $@)
 	@echo "  CC    $< (PRE_CAL)"
 	@$(CC) $(CAL_CFLAGS) -MMD -MP -c $< -o $@
 
-$(BINDIR) $(BUILD)/release $(BUILD)/precal:
+$(BINDIR):
 	@mkdir -p $@
 
 # Syntax-only pass over every translation unit, in both build configurations.

@@ -1,17 +1,14 @@
 # ============================================================
 # 强制按字节原样存储，禁止 Git 改写换行符
 #
-# 原因：本仓库的源码是 GBK 编码，且换行风格不统一
-#   dpCal.c   CRLF
-#   dpCal.h   LF
-#   Adventure.c CRLF
+# 原因：源码是 UTF-8（带 BOM）且换行统一为 CRLF，含中文注释。
 # 若让 Git 自动转换（core.autocrlf=true 会把 CRLF 改成 LF 存入、
-# 再在 checkout 时统一改回 CRLF），clone 下来就会破坏上面的约定。
+# 再在 checkout 时按平台改回），clone 下来就会破坏上面的约定，
+# 带 BOM 的差异也会污染每一行 diff。
 # 这里用 -text 关闭所有 eol 转换，保证存进去的就是本地那串字节。
 # ============================================================
 * -text
 
-# 显式声明源码语言，便于 GitHub 语法高亮
-*.c    -text
-*.h    -text
-*.md   -text
+# 显式声明源码语言，便于 GitHub 语法高亮与统计
+*.c  linguist-language=C
+*.h  linguist-language=C

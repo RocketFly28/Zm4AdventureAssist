@@ -1,4 +1,4 @@
-/*
+﻿/*
  * cli.h - command line front end for the survival-adventure DP kernel.
  *
  * This module is the only place in the native build that touches stdin and
@@ -13,7 +13,7 @@
 #ifndef CLI_H
 #define CLI_H
 
-#include "common.h"
+#include "../dpsolver/common.h"
 
 #ifdef __cplusplus
 extern "C" {
