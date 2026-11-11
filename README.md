@@ -1,6 +1,6 @@
 # 生存大冒险 · 策略求解内核
 
-**Survival Adventure — an exact DP solver, plus a distilled Transformer policy that answers in one forward pass.**
+**Survival Adventure — an exact DP solver, plus a micro Transformer policy that answers in one forward pass.**
 
 > 把「靠运气的冒险」算成「有最优解的最优化问题」：给定角色属性和答题进度，
 > 精确算出每个选项能把「达标概率」推到多高；或者用一个 6 MB 的小网络，
